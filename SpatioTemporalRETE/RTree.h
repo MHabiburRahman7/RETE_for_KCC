@@ -95,6 +95,9 @@ public:
   /// \return Returns the number of entries found
   int Search(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], t_resultCallback a_resultCallback, void* a_context);
   
+  // MY SEARCH FUNCTION -----------------------HAHAHAH ----------------------
+  vector<int> Search_vec(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], t_resultCallback a_resultCallback, void* a_context);
+  
   /// Remove all entries from tree
   void RemoveAll();
 
@@ -356,6 +359,10 @@ protected:
   bool Overlap(Rect* a_rectA, Rect* a_rectB);
   void ReInsert(Node* a_node, ListNode** a_listNode);
   bool Search(Node* a_node, Rect* a_rect, int& a_foundCount, t_resultCallback a_resultCallback, void* a_context);
+
+  //----------------------------MY SEARCH FUNCTION -----------------------------
+  bool Search_vec(Node* a_node, Rect* a_rect, vector<int>& a_foundCount, t_resultCallback a_resultCallback, void* a_context);
+
   void RemoveAllRec(Node* a_node);
   void Reset();
   void CountRec(Node* a_node, int& a_count);
@@ -526,6 +533,79 @@ void RTREE_QUAL::Remove(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMD
   RemoveRect(&rect, a_dataId, &m_root);
 }
 
+
+RTREE_TEMPLATE
+vector<int> RTREE_QUAL::Search_vec(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], t_resultCallback a_resultCallback, void* a_context)
+{
+#ifdef _DEBUG
+    for (int index = 0; index < NUMDIMS; ++index)
+    {
+        ASSERT(a_min[index] <= a_max[index]);
+    }
+#endif //_DEBUG
+
+    Rect rect;
+
+    for (int axis = 0; axis < NUMDIMS; ++axis)
+    {
+        rect.m_min[axis] = a_min[axis];
+        rect.m_max[axis] = a_max[axis];
+    }
+
+    // NOTE: May want to return search result another way, perhaps returning the number of found elements here.
+
+    vector<int> foundCount = {};
+    Search_vec(m_root, &rect, foundCount, a_resultCallback, a_context);
+
+    return foundCount;
+}
+
+RTREE_TEMPLATE
+bool RTREE_QUAL::Search_vec(Node* a_node, Rect* a_rect, vector<int>& a_foundCount, t_resultCallback a_resultCallback, void* a_context)
+{
+    ASSERT(a_node);
+    ASSERT(a_node->m_level >= 0);
+    ASSERT(a_rect);
+
+    if (a_node->IsInternalNode())
+    {
+        // This is an internal node in the tree
+        for (int index = 0; index < a_node->m_count; ++index)
+        {
+            if (Overlap(a_rect, &a_node->m_branch[index].m_rect))
+            {
+                if (!Search_vec(a_node->m_branch[index].m_child, a_rect, a_foundCount, a_resultCallback, a_context))
+                {
+                    // The callback indicated to stop searching
+                    return false;
+                }
+            }
+        }
+    }
+    else
+    {
+        // This is a leaf node
+        for (int index = 0; index < a_node->m_count; ++index)
+        {
+            if (Overlap(a_rect, &a_node->m_branch[index].m_rect))
+            {
+                DATATYPE& id = a_node->m_branch[index].m_data;
+                a_foundCount.push_back(id);
+
+                // NOTE: There are different ways to return results.  Here's where to modify
+                if (a_resultCallback)
+                {
+                    if (!a_resultCallback(id, a_context))
+                    {
+                        return false; // Don't continue searching
+                    }
+                }
+            }
+        }
+    }
+
+    return true; // Continue searching
+}
 
 RTREE_TEMPLATE
 int RTREE_QUAL::Search(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], t_resultCallback a_resultCallback, void* a_context)

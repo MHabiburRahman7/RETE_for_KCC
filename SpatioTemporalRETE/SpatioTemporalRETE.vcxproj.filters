@@ -57,6 +57,9 @@
     <ClCompile Include="RTreeMemoryTest.cpp">
       <Filter>Source Files\RTree</Filter>
     </ClCompile>
+    <ClCompile Include="TestRTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Event.h">

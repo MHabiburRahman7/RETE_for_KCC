@@ -157,6 +157,9 @@
     <ClCompile Include="RTreeTest.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="TestRTree.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Utilities.cpp" />
     <ClCompile Include="WorkingMemory.cpp" />
   </ItemGroup>

@@ -104,6 +104,14 @@ string BetaNode::getRightConnName()
 void BetaNode::setWindow(int len, int step)
 {
 	win = new SlidingWindow(len, step);
+	
+	//temporary function
+	if (leftSourcePair.second != NULL) {
+		leftSourcePair.second->setWindow(len, step);
+	}
+	if (rightSourcePair.second != NULL) {
+		rightSourcePair.second->setWindow(len, step);
+	}
 }
 
 void BetaNode::setMatchingKey(string newKey)
@@ -178,6 +186,11 @@ bool BetaNode::isEmptyResult()
 
 int BetaNode::justTest()
 {
+	//dont forget about acnhor
+	bool anchorIsAtLeft = true;
+	vector<int> anchorObjId = {};
+
+
 	//in case both of the inputs are same
 	//idk why but only left that is working
 	if (leftSourcePair.second == rightSourcePair.second) {
@@ -210,11 +223,13 @@ int BetaNode::justTest()
 		if (leftInputQueue.first.size() <= rightInputQueue.first.size()) {
 			left = &leftInputQueue.first;
 			right = &rightInputQueue.first;
+			anchorIsAtLeft = true;
 		}
 		else
 		{
 			left = &rightInputQueue.first;
 			right = &leftInputQueue.first;
+			anchorIsAtLeft = false;
 		}
 
 		while (1) {
@@ -228,30 +243,67 @@ int BetaNode::justTest()
 			EventPtr frontRightEvent = right->front();
 
 			if (frontLeftEvent->getInt(key) == frontRightEvent->getInt(key)) {
-				EventPtr res;
+				//EventPtr res;
 
-				if (specialOperation == "distance") { //in case of distance --> need to calculate each time ticks
-					res = thisSpatialOp->calculate(frontLeftEvent, frontRightEvent);
-				}
+				//if (specialOperation == "distance") { //in case of distance --> need to calculate each time ticks
+				//	res = thisSpatialOp->calculate(frontLeftEvent, frontRightEvent);
+				//}
 
 				//push to window
 				if (win) {
-					if (specialOperation == "distance") {
-						win->addEvent(res);
-					}
-					else if (specialOperation != "") {
-						win->addEvent(frontLeftEvent, frontRightEvent);
+					//if (specialOperation == "distance") {
+					//	win->addEvent(res);
+					//}
+					//else 
+					if (specialOperation != "") {
+						//later i will consider about double buffer
+						//win->addEvent(frontLeftEvent, frontRightEvent);
+
+						win->addEvent(frontLeftEvent);
+						win->addEvent(frontRightEvent);
 					}
 					else
 						win->addEvent(frontLeftEvent);
 				}
 
 				//push to result
-				if (specialOperation != "") {
+				/*if (specialOperation != "") {
 					EventResult.push(res);
 				}
-				else
+				else*/
 					EventResult.push(frontLeftEvent);
+
+				if (anchorIsAtLeft) {
+					//check anchor duplicate
+					bool dup = false;
+					int tempObjId = frontLeftEvent->getInt("objid");
+					for (int i = 0; i < anchorObjId.size(); i++) {
+						if (anchorObjId[i] == tempObjId) {
+							dup = true;
+							break;
+						}
+					}
+
+					//push
+					if(!dup)
+						anchorObjId.push_back(frontLeftEvent->getInt("objid"));
+				}
+				else {
+					//check anchor duplicate
+					bool dup = false;
+					int tempObjId = frontRightEvent->getInt("objid");
+					for (int i = 0; i < anchorObjId.size(); i++) {
+						if (anchorObjId[i] == tempObjId) {
+							dup = true;
+							break;
+						}
+					}
+
+					//push
+					if (!dup)
+						anchorObjId.push_back(frontRightEvent->getInt("objid"));
+				}
+
 			}
 			if (frontLeftEvent->getInt(key) >= frontRightEvent->getInt(key)) {
 				right->pop();
@@ -266,10 +318,10 @@ int BetaNode::justTest()
 	
 	if(win != NULL && specialOperation != ""){
 		//Spatial Op
-		EventResult = thisSpatialOp->process(win);
+		EventResult = thisSpatialOp->process(win, anchorObjId);
 	}
 
-	if (win != NULL && EventResult.size() > 0) {
+	if (win != NULL && EventResult.size() > 0 && specialOperation == "") {
 		queue<EventPtr>* local_win = win->getFinalRes();
 		EventResult = *local_win;
 	}

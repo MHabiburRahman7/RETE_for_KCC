@@ -435,6 +435,8 @@ void ReteNet::ExecuteRete(int TimeSlice)
 	while (!pushedNode.empty()) {
 		//if (!static_cast<BetaNode*>(static_cast<BetaNode*>(pushedBeta[0])->getLeftConnNode())->isEmptyResult()
 		//	&& !static_cast<BetaNode*>(static_cast<BetaNode*>(pushedBeta[0])->getRightConnNode())->isEmptyResult()) {
+
+		//Maybe this is the indexing?
 		int testStatus = pushedNode[0]->testNode(TimeSlice);
 
 		if (testStatus == 0) {
