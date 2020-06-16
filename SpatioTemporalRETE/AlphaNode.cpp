@@ -5,10 +5,10 @@ int AlphaNode::testNode(int TimeSlice)
 	return justTest(TimeSlice);
 }
 
-int AlphaNode::getID()
-{
-	return id;
-}
+//int AlphaNode::getID()
+//{
+//	return id;
+//}
 
 string AlphaNode::getType()
 {

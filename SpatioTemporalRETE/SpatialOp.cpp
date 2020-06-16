@@ -8,7 +8,7 @@ SpatialOp::SpatialOp(string name)
 bool ReturnVal(int id, void* arg)
 {
 	//dynamic_cast<Event*>(arg)->addAttr("leftobj", id);
-	printf("Hit data rect %d\n", id);
+	//printf("Hit data rect %d\n", id);
 	return true; // keep going
 }
 
@@ -70,6 +70,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		//	res.pop();
 		//}
 
+		
+#pragma region RTreeRegion
 		RTree<int, float, 2, float> tree;
 
 		unordered_map<int, pair<float, float>> hash_latestUpdate;
@@ -96,7 +98,6 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 			}
 
 			Rect* tempAnchor;
-			int nhits = 0;
 			vector<int> nhits_vec;
 
 			while (oneTimeEvent.size() > 0) {
@@ -176,7 +177,27 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 				}
 			}
 		}
+#pragma endregion
 
+
+/*
+#pragma region ManualDistCalculation
+	float res;
+	for (int i = 0; i < anchorObjList.size(); i++) {
+
+	}
+	res = sqrt(pow((b->getFloat("lat") - (a->getFloat("lat"))), 2) + pow((b->getFloat("lon") - (a->getFloat("lon"))), 2));
+
+	if (varCondition == "<" && res < atof(varLimit.c_str())) {
+		Event* e = new Event(Utilities::id++, a->getInt("time"));
+		e->addAttr("dist", res);
+		e->addAttr("objLeft", a->getInt("objid"));
+		e->addAttr("objright", b->getInt("objid"));
+
+		return (EventPtr(e));
+	}
+#pragma endregion
+*/
 		return final_res;
 	}
 	else if (queryName == "exist") {
@@ -258,6 +279,11 @@ int SpatialOp::isAnchor(int objId)
 			return i;
 	}
 	return -1;
+}
+
+float SpatialOp::getLimitFloat()
+{
+	return atof(varLimit.c_str());
 }
 
 bool SpatialOp::intersectLineSegment(EventPtr StartA, EventPtr EndB, EventPtr StartC, EventPtr EndD)

@@ -39,6 +39,7 @@ public:
 	//anchor object id thing
 	void anchorPush(vector<int> vec);
 	int isAnchor(int objId);
+	float getLimitFloat();
 
 	//Ok, this is new
 	bool intersectLineSegment(EventPtr A, EventPtr B, EventPtr C, EventPtr D);

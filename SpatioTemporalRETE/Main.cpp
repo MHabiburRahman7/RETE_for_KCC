@@ -58,8 +58,8 @@ queue<EventPtr> generateSample(int number) {
 
 		e->addAttr("type", "recon");
 		e->addAttr("speed", (float)Utilities::randomFloat(3, 10));
-		e->addAttr("lon", (float)Utilities::randomFloat(127, 129));
-		e->addAttr("lat", (float)Utilities::randomFloat(35, 37));
+		e->addAttr("lon", (float)Utilities::randomFloat(127, 135));
+		e->addAttr("lat", (float)Utilities::randomFloat(35, 44));
 		//e->addAttr("dir", (float)Utilities::randomFloat(0, 360));
 		float ele = (float)Utilities::randomFloat(0, 10);
 		e->addAttr("elevation", ele);
@@ -110,7 +110,7 @@ int main() {
 
 			//SPATIAL IF ELSE
 			made = {};
-			made.push_back("IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon");
+			made.push_back("IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon");
 			made.push_back("WINDOW range=5");
 			made.push_back("THEN navalthreat");
 

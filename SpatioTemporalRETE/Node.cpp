@@ -12,3 +12,8 @@ void Node::setNewMasterID(int newId)
 	SuperNodeID = newId;
 }
 
+int Node::getID()
+{
+	return SuperNodeID;
+}
+

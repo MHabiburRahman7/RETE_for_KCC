@@ -112,24 +112,6 @@ void connectNodes(Node& n1, Node& n2) {
 	}
 };
 
-//class WorkingMemory
-//{
-//public:
-//	WorkingMemory();
-//	~WorkingMemory();
-//
-//private:
-//
-//};
-//
-//WorkingMemory::WorkingMemory()
-//{
-//}
-//
-//WorkingMemory::~WorkingMemory()
-//{
-//}
-
 void processRete(int timeSlice, queue<EventPtr>* ev)
 {
 	/*if (m_WMSet.getWMInputQueue().size() < 1)

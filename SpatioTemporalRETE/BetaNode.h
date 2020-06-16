@@ -16,7 +16,7 @@ class BetaNode : public Node
 public:
 	//Function from Node
 	int testNode(int TimeSlice);
-	int getID();
+	//int getID();
 	string getType();
 	Node* getSinglePair(int i);
 	vector<Node*> getAllPairs();
@@ -43,6 +43,9 @@ public:
 	Node* getRightConnNode();
 	string getLeftConnName();
 	string getRightConnName();
+	string getSpecialOpName();
+
+	float getSpatialLimFloat();
 
 	void setWindow(int len, int step);
 	void setMatchingKey(string newKey);
@@ -54,6 +57,7 @@ public:
 
 	bool isEmptyResult();
 	int justTest();
+	void forcePushInQueue(EventPtr* result, bool toLeft = true);
 
 	queue<EventPtr>* getEvRes();
 
@@ -61,7 +65,7 @@ public:
 	void refreshEvent(queue<EventPtr>& inputEvent);
 
 private:
-	int id;
+	//int id;
 	string thisCondition; //AND OR
 	string thisProduct; //Then expression or RHS
 	string specialOperation, specialOperationLeft, specialOperationRight;

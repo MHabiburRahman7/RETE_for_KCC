@@ -25,7 +25,7 @@ public:
 
 	//Derived function from Node class
 	int testNode(int TimeSlice);
-	int getID();
+	//int getID();
 	string getType();
 	bool isEmptyResult();
 	void pushResult(queue<EventPtr>* result, Node* inputNode);
@@ -64,7 +64,7 @@ public:
 	void setWindow(int len = -1, int step = -1);
 
 private:
-	int id;
+	//int id;
 	queue<EventPtr>* EventResult = new queue<EventPtr>();
 
 	//Condition -- Still confused

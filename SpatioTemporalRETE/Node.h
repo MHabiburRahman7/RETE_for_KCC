@@ -14,7 +14,8 @@ public:
 	Node(int id, string condition);
 	void setNewMasterID(int newId);
 	//Node();
-	virtual int getID() = 0;
+	//virtual int getID() = 0;
+	int getID();
 	virtual string getType() = 0;
 	virtual bool isEmptyResult() = 0;
 

@@ -16,6 +16,16 @@ BetaNode::BetaNode(int id_given, string condition)
 	
 	Utilities::tokenizeBetaExp(condition, leftSourcePair.first, rightSourcePair.first, specialOperation, limit, thisCondition, thisProduct);
 
+	//trimming
+	leftSourcePair.first = Utilities::lTrim(leftSourcePair.first);
+	leftSourcePair.first = Utilities::rTrim(leftSourcePair.first);
+
+	rightSourcePair.first = Utilities::lTrim(rightSourcePair.first);
+	rightSourcePair.first = Utilities::rTrim(rightSourcePair.first);
+
+
+#pragma region CreateSmallNodeBecauseitContainspatialOp
+
 	if (specialOperation == "") {
 		int leftBr = -1, rightBr = -1, coma = -1;
 		//check left and right
@@ -66,7 +76,11 @@ BetaNode::BetaNode(int id_given, string condition)
 
 		}
 	}
-	else {
+
+#pragma endregion
+
+
+	if (specialOperation != "") {
 		key = "time";
 		thisSpatialOp = new SpatialOp(specialOperation);
 		if (limit != "")
@@ -99,6 +113,16 @@ string BetaNode::getLeftConnName()
 string BetaNode::getRightConnName()
 {
 	return rightSourcePair.first;
+}
+
+string BetaNode::getSpecialOpName()
+{
+	return specialOperation;
+}
+
+float BetaNode::getSpatialLimFloat()
+{
+	return thisSpatialOp->getLimitFloat();
 }
 
 void BetaNode::setWindow(int len, int step)
@@ -251,6 +275,8 @@ int BetaNode::justTest()
 
 				//push to window
 				if (win) {
+					//ALL SPECIAL OPERATION IS PROCESSED ON SPATIAL CLASS --> so, just push all to window
+
 					//if (specialOperation == "distance") {
 					//	win->addEvent(res);
 					//}
@@ -261,9 +287,23 @@ int BetaNode::justTest()
 
 						win->addEvent(frontLeftEvent);
 						win->addEvent(frontRightEvent);
+
+						left->pop();
+						//right->pop();
 					}
-					else
-						win->addEvent(frontLeftEvent);
+					else {
+						//ONE OF THEM MUST BE NEWLY CREATED EVENT ._.
+						if (frontLeftEvent != frontRightEvent) {
+							int z = 0;
+							if (anchorIsAtLeft)
+								win->addEvent(frontLeftEvent);
+							else
+								win->addEvent(frontRightEvent);
+						}
+						else { //BOTH are original Event
+							win->addEvent(frontLeftEvent);
+						}
+					}
 				}
 
 				//push to result
@@ -353,6 +393,17 @@ int BetaNode::justTest()
 	}
 }
 
+void BetaNode::forcePushInQueue(EventPtr* result, bool toLeft)
+{
+	EventPtr dummy_res = *result;
+	if (toLeft) {
+		leftInputQueue.first.push(dummy_res);
+	}
+	else {
+		rightInputQueue.first.push(dummy_res);
+	}
+}
+
 queue<EventPtr>* BetaNode::getEvRes()
 {
 	return &EventResult;
@@ -408,10 +459,10 @@ int BetaNode::testNode(int TimeSlice)
 	//}
 }
 
-int BetaNode::getID()
-{
-	return id;
-}
+//int BetaNode::getID()
+//{
+//	return id;
+//}
 
 
 int BetaNode::addBetaPair(Node* pair)
