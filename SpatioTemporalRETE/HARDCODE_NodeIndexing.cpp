@@ -65,8 +65,8 @@ queue<EventPtr> generateSamepleLatLong(int number) {
 
 		e->addAttr("type", "recon"); //sclar
 		e->addAttr("speed", (float)Utilities::randomFloat(3, 10)); //scalar
-		e->addAttr("lon", (float)Utilities::randomFloat(127, 129)); //spatial
-		e->addAttr("lat", (float)Utilities::randomFloat(35, 37)); //spatial
+		e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial
+		e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial
 		float ele = (float)Utilities::randomFloat(0, 10); 
 		e->addAttr("elevation", ele); //scalar
 
@@ -223,6 +223,98 @@ void buildNetNode()
 	int a = 12;
 }
 
+void processRete(int timeSlice, queue<EventPtr>* ev)
+{
+	/*if (m_WMSet.getWMInputQueue().size() < 1)
+		return;*/
+
+	vector<pair<Node*, int>> visitedMark;
+	vector<Node*> pushedBeta;
+
+	bool isDone = false;
+
+	//activate all alpha
+	for (int j = 0; j < alphaListIDDictionary.size(); j++) {
+		queue<EventPtr> local_event = *ev;
+
+		//test on alpha
+		if (static_cast<AlphaNode*>(NodeList[alphaListIDDictionary[j]])->ItIsDirect());
+		static_cast<AlphaNode*>(NodeList[alphaListIDDictionary[j]])->testAlphaAndPush(&local_event, timeSlice);
+
+		//activate the beta
+		//searching all pair and push it
+		for (int k = 0; k < static_cast<AlphaNode*>(NodeList[alphaListIDDictionary[j]])->getAllPairs().size(); k++) {
+
+			//check for duplicate
+			bool isADuplicate = false;
+			for (int l = 0; l < pushedBeta.size(); l++) {
+				if (pushedBeta[l] == static_cast<AlphaNode*>(NodeList[alphaListIDDictionary[j]])->getSinglePair(k)) {
+					isADuplicate = true;
+					break;
+				}
+			}
+			if (!isADuplicate) {
+				pushedBeta.push_back(static_cast<AlphaNode*>(NodeList[alphaListIDDictionary[j]])->getSinglePair(k));
+				visitedMark.push_back({ static_cast<AlphaNode*>(NodeList[alphaListIDDictionary[j]])->getSinglePair(k), 0 });
+			}
+		}
+
+		//break;
+	}
+
+	//BFS based on Queue
+	while (!pushedBeta.empty()) {
+		
+		if (dynamic_cast<BetaNode*>(pushedBeta[0])) {
+			if (dynamic_cast<BetaNode*>(pushedBeta[0])->getSpecialOpName() != "") {
+				pushedBeta.erase(pushedBeta.begin());
+				continue;
+			}
+		}
+
+		int res = pushedBeta[0]->testNode(timeSlice);
+
+		if (res == 0) {
+			pushedBeta.erase(pushedBeta.begin());
+			continue;
+		}
+
+		//Activate successor node
+		for (int i = 0; i < pushedBeta[0]->getAllPairs().size(); i++) {
+
+			//Check to avoid duplication
+			bool isDuplicate = false;
+			for (int j = 0; j < pushedBeta.size(); j++) {
+				if (pushedBeta[0]->getSinglePair(i) == pushedBeta[j]) {
+					isDuplicate = true;
+					break;
+				}
+			}
+			if (!isDuplicate)
+				pushedBeta.push_back(pushedBeta[0]->getSinglePair(i));
+		}
+
+		//Mark the current node in visited mark
+		for (int i = 0; i < visitedMark.size(); i++) {
+			if (visitedMark[i].first == pushedBeta[0]) {
+				visitedMark[i].second++;
+
+				//Evaluate visited mark
+				if (visitedMark[i].second >= 3)
+					isDone = true;
+				break;
+			}
+		}
+		//}
+
+		pushedBeta.erase(pushedBeta.begin());
+
+		if (isDone)
+			break;
+	}
+	int a = 0;
+}
+
 int main() {
 	
 	Node* tempNode;
@@ -242,11 +334,11 @@ int main() {
 	tempNode = new BetaNode(4, "speed>3 and elevation<10 then sp3el10");
 	NodeList.push_back(tempNode);
 	betaListIDDictionary.push_back(4);
-	tempNode = new BetaNode(5, "sp3el10 and iff=true then allyvessel");
+	tempNode = new BetaNode(5, "sp3el10 and iff=ally then allyvessel");
 	NodeList.push_back(tempNode);
 	betaListIDDictionary.push_back(5);
 
-	tempNode = new BetaNode(6, "sp3el10 and iff=false then enemyvessel");
+	tempNode = new BetaNode(6, "sp3el10 and iff=enemy then enemyvessel");
 	NodeList.push_back(tempNode);
 	betaListIDDictionary.push_back(6);
 
@@ -308,8 +400,145 @@ int main() {
 	//NodeList.push_back(tempNode);
 	//alphaListIDDictionary.push_back(14);
 
+	//filter the spatial node that we can do indexing
+	vector<Node*> nodewithspatialIndexing;
+	//list the anchor class
+	vector<pair<string, int>> vec_anchor_id;
+	for (int i = 0; i < betaListIDDictionary.size(); i++) {
+		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() != "") {
+			nodewithspatialIndexing.push_back(NodeList[betaListIDDictionary[i]]);
+			vec_anchor_id.push_back({ static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), NodeList[betaListIDDictionary[i]]->getID() });
+		}
+	}
+
 	//generate events
 	queue<EventPtr> wm = generateSamepleLatLong(1000);
+
+	int event_count = 0;
+	while (wm.size() > 990) {
+		
+		int currTime = wm.front()->getInt("time");
+
+		//dummy for tree
+		queue<EventPtr> oneTimeEvent = {};
+		while (wm.front()->getInt("time") == currTime) {
+			oneTimeEvent.push(wm.front());
+			wm.pop();
+
+			if (wm.size() <= 0)
+				break;
+		}
+
+		processRete(100, &oneTimeEvent);
+		//now corresponding node (allyvessel & enemy vessel has value in it)
+
+		//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
+		RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
+
+		//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time t
+		//onetime event contain 2 ally & 2 enemy respectively
+		for (int j = 0; j < vec_anchor_id.size(); j++) {
+			if (vec_anchor_id[j].first == "allyvessel") // ok ok , it is separated perfectly
+			{
+				queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
+				for (; anchorEventQueue.size()>0;) {
+					float xpos[2], ypos[2];
+					xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+					xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+					ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+					ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+					tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+
+					//anchor always on the left --> it is already inside the node
+					/*if (dynamic_cast<BetaNode*>(nodewithspatialIndexing[j])) {
+						dynamic_cast<BetaNode*>(nodewithspatialIndexing[j])->forcePushInQueue(&anchorEventQueue.front(), true);
+					}*/
+					anchorEventQueue.pop();
+				}
+			}
+		}
+		//the tree is set now
+		
+		//now test with the enemy
+		vector<Node*> pushedNode = {};
+		vector<EventPtr> distinctEnemyVector = {};
+		vector<int> nhits_vec;
+		for (int j = 0; j < vec_anchor_id.size(); j++) {
+			if (vec_anchor_id[j].first == "allyvessel") // ok ok , it is separated perfectly
+			{
+				queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
+
+				for (; testEventQueue.size() > 0; testEventQueue.pop()) {
+					distinctEnemyVector.push_back(testEventQueue.front());
+
+					//distinct enemy event
+					sort(distinctEnemyVector.begin(), distinctEnemyVector.end());
+					distinctEnemyVector.erase(unique(distinctEnemyVector.begin(), distinctEnemyVector.end()), distinctEnemyVector.end());
+				}
+			}
+		}
+
+
+		//------------------------------------------------------------------------------------------------
+		//after it is dinctinct, so we can process the stabbing process
+		for (int i = 0; i < distinctEnemyVector.size(); i++) {
+			float xpos[2], ypos[2];
+			xpos[0] = xpos[1] = distinctEnemyVector[i]->getFloat("lat");
+			ypos[0] = ypos[1] = distinctEnemyVector[i]->getFloat("lon");
+
+			nhits_vec = tree.Search_vec(xpos, ypos, ReturnValHere, NULL);
+
+			//distinct the correlated beta nodes that hit
+			sort(nhits_vec.begin(), nhits_vec.end());
+			nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
+
+			//push this into rete net
+			//this must be on the right
+			for (int j = 0; j < nhits_vec.size(); j++) {
+				Node* tempNode = NodeList[nhits_vec[j]];
+				if (dynamic_cast<BetaNode*>(tempNode)) {
+					//dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&enemyVess[i], false);
+
+					pushedNode.push_back(tempNode);
+
+					//sort and distinct
+					sort(pushedNode.begin(), pushedNode.end());
+					pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
+				}
+			}
+		}
+
+		while (!pushedNode.empty()) {
+			//Maybe this is the indexing?
+			int testStatus = pushedNode[0]->testNode(10);
+
+			if (testStatus == 0) {
+				pushedNode.erase(pushedNode.begin());
+				continue;
+			}
+
+			//Activate successor node	
+			for (int i = 0; i < pushedNode[0]->getAllPairs().size(); i++) {
+
+				//Check to avoid duplication
+				bool isDuplicate = false;
+				for (int j = 0; j < pushedNode.size(); j++) {
+					if (pushedNode[0]->getSinglePair(i) == pushedNode[j]) {
+						isDuplicate = true;
+						break;
+					}
+				}
+				if (!isDuplicate)
+					pushedNode.push_back(pushedNode[0]->getSinglePair(i));
+			}
+
+			pushedNode.erase(pushedNode.begin());
+		}
+		int a = 0;
+
+	}
 
 	//Lets talk about spatial node indexing 
 	//format (lat, long, anchorObjName, testObjName, corrNodes[]);
@@ -321,25 +550,11 @@ int main() {
 
 	RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
 
-	int i, nhits;
-
-	//filter the spatial indexing
-	vector<Node*> nodewithspatialIndexing;
-	for (int i = 0; i < betaListIDDictionary.size(); i++) {
-		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() != "") {
-			nodewithspatialIndexing.push_back(NodeList[betaListIDDictionary[i]]);
-		}
-	}
-
-	//list the anchor class
-	vector<pair<string, int>> vec_anchor_id;
-	for (int i = 0; i < nodewithspatialIndexing.size(); i++) {
-		vec_anchor_id.push_back({ static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName(), nodewithspatialIndexing[i]->getID() });
-	}
-
+	
+#pragma region RegionForceInput
 	//consider the separation is done before
 	vector<EventPtr> enemyVess, allyVess;
-	for (;wm.size() > 0; wm.pop()) {
+	for (; wm.size() > 0; wm.pop()) {
 		EventPtr originalFrontEvent = wm.front();
 		if (originalFrontEvent->getString("iff") == "ally") {
 			allyVess.push_back(originalFrontEvent);
@@ -349,16 +564,18 @@ int main() {
 		}
 	}
 
-
 	//err, again force push the join node
 	for (int i = 0; i < 2; i++) {
 		for (int j = 9; j <= 11; j++) { //-------> related node id
 			dynamic_cast<BetaNode*>(NodeList[j])->forcePushInQueue(&allyVess[i], false);
 		}
 	}
+#pragma endregion
 
 
 #pragma region SpatioTemporalIndexing
+	//dinstinct the event processing range --> only process event that happened at time x
+	
 	//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time 0
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < vec_anchor_id.size(); j++) {

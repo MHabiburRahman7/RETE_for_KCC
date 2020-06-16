@@ -44,6 +44,8 @@ public:
 	string getLeftConnName();
 	string getRightConnName();
 	string getSpecialOpName();
+	queue<EventPtr> getLeftInput();
+	queue<EventPtr> getRightInput();
 
 	float getSpatialLimFloat();
 

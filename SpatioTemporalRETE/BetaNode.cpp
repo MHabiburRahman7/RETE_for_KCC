@@ -23,7 +23,7 @@ BetaNode::BetaNode(int id_given, string condition)
 	rightSourcePair.first = Utilities::lTrim(rightSourcePair.first);
 	rightSourcePair.first = Utilities::rTrim(rightSourcePair.first);
 
-
+/*
 #pragma region CreateSmallNodeBecauseitContainspatialOp
 
 	if (specialOperation == "") {
@@ -78,7 +78,7 @@ BetaNode::BetaNode(int id_given, string condition)
 	}
 
 #pragma endregion
-
+*/
 
 	if (specialOperation != "") {
 		key = "time";
@@ -118,6 +118,16 @@ string BetaNode::getRightConnName()
 string BetaNode::getSpecialOpName()
 {
 	return specialOperation;
+}
+
+queue<EventPtr> BetaNode::getLeftInput()
+{
+	return leftInputQueue.first;
+}
+
+queue<EventPtr> BetaNode::getRightInput()
+{
+	return rightInputQueue.first;
 }
 
 float BetaNode::getSpatialLimFloat()
@@ -242,114 +252,138 @@ int BetaNode::justTest()
 		if (leftInputQueue.first.size() == 0 || rightInputQueue.first.size() == 0)
 			return 0;
 
-		//left is less than right - HAVE TO
-		queue<EventPtr> *left, *right;
-		if (leftInputQueue.first.size() <= rightInputQueue.first.size()) {
-			left = &leftInputQueue.first;
-			right = &rightInputQueue.first;
-			anchorIsAtLeft = true;
-		}
-		else
-		{
-			left = &rightInputQueue.first;
-			right = &leftInputQueue.first;
-			anchorIsAtLeft = false;
-		}
-
-		while (1) {
-			if (left->size() == 0 || right->size() == 0)
-				break;
-
-			if (left->size() == 4294967294 || right->size() == 4294967294)
-				break;
-
-			EventPtr frontLeftEvent = left->front();
-			EventPtr frontRightEvent = right->front();
-
-			if (frontLeftEvent->getInt(key) == frontRightEvent->getInt(key)) {
-				//EventPtr res;
-
-				//if (specialOperation == "distance") { //in case of distance --> need to calculate each time ticks
-				//	res = thisSpatialOp->calculate(frontLeftEvent, frontRightEvent);
-				//}
-
-				//push to window
+		//special case for time --> so far we make this system is executed each time ticks. Meaning all input from left or right 
+		//is already at the same time
+		if (key == "time") {
+			//left input also the anchor
+			for (; leftInputQueue.first.size() > 0; leftInputQueue.first.pop()) {
 				if (win) {
-					//ALL SPECIAL OPERATION IS PROCESSED ON SPATIAL CLASS --> so, just push all to window
+					win->addEvent(leftInputQueue.first.front());
+				}
+				EventResult.push(leftInputQueue.first.front());
 
-					//if (specialOperation == "distance") {
-					//	win->addEvent(res);
+				anchorObjId.push_back(leftInputQueue.first.front()->getInt("objid"));
+			}
+			//right input
+			for (; rightInputQueue.first.size() > 0; rightInputQueue.first.pop()) {
+				if (win) {
+					win->addEvent(rightInputQueue.first.front());
+				}
+				EventResult.push(rightInputQueue.first.front());
+			}
+		}
+		else {
+
+			//this case if it is still using id to do matching
+			//left is less than right - HAVE TO
+			queue<EventPtr>* left, * right;
+			if (leftInputQueue.first.size() <= rightInputQueue.first.size()) {
+				left = &leftInputQueue.first;
+				right = &rightInputQueue.first;
+				anchorIsAtLeft = true;
+			}
+			else
+			{
+				left = &rightInputQueue.first;
+				right = &leftInputQueue.first;
+				anchorIsAtLeft = false;
+			}
+
+			while (1) {
+				if (left->size() == 0 || right->size() == 0)
+					break;
+
+				if (left->size() == 4294967294 || right->size() == 4294967294)
+					break;
+
+				EventPtr frontLeftEvent = left->front();
+				EventPtr frontRightEvent = right->front();
+
+				if (frontLeftEvent->getInt(key) == frontRightEvent->getInt(key)) {
+					//EventPtr res;
+
+					//if (specialOperation == "distance") { //in case of distance --> need to calculate each time ticks
+					//	res = thisSpatialOp->calculate(frontLeftEvent, frontRightEvent);
 					//}
-					//else 
-					if (specialOperation != "") {
-						//later i will consider about double buffer
-						//win->addEvent(frontLeftEvent, frontRightEvent);
 
-						win->addEvent(frontLeftEvent);
-						win->addEvent(frontRightEvent);
+					//push to window
+					if (win) {
+						//ALL SPECIAL OPERATION IS PROCESSED ON SPATIAL CLASS --> so, just push all to window
 
-						left->pop();
-						//right->pop();
-					}
-					else {
-						//ONE OF THEM MUST BE NEWLY CREATED EVENT ._.
-						if (frontLeftEvent != frontRightEvent) {
-							int z = 0;
-							if (anchorIsAtLeft)
-								win->addEvent(frontLeftEvent);
-							else
-								win->addEvent(frontRightEvent);
-						}
-						else { //BOTH are original Event
+						//if (specialOperation == "distance") {
+						//	win->addEvent(res);
+						//}
+						//else 
+						if (specialOperation != "") {
+							//later i will consider about double buffer
+							//win->addEvent(frontLeftEvent, frontRightEvent);
+
 							win->addEvent(frontLeftEvent);
+							win->addEvent(frontRightEvent);
+
+							left->pop();
+							//right->pop();
+						}
+						else {
+							//ONE OF THEM MUST BE NEWLY CREATED EVENT ._.
+							if (frontLeftEvent != frontRightEvent) {
+								int z = 0;
+								if (anchorIsAtLeft)
+									win->addEvent(frontLeftEvent);
+								else
+									win->addEvent(frontRightEvent);
+							}
+							else { //BOTH are original Event
+								win->addEvent(frontLeftEvent);
+							}
 						}
 					}
-				}
 
-				//push to result
-				/*if (specialOperation != "") {
-					EventResult.push(res);
-				}
-				else*/
+					//push to result
+					/*if (specialOperation != "") {
+						EventResult.push(res);
+					}
+					else*/
 					EventResult.push(frontLeftEvent);
 
-				if (anchorIsAtLeft) {
-					//check anchor duplicate
-					bool dup = false;
-					int tempObjId = frontLeftEvent->getInt("objid");
-					for (int i = 0; i < anchorObjId.size(); i++) {
-						if (anchorObjId[i] == tempObjId) {
-							dup = true;
-							break;
+					if (anchorIsAtLeft) {
+						//check anchor duplicate
+						bool dup = false;
+						int tempObjId = frontLeftEvent->getInt("objid");
+						for (int i = 0; i < anchorObjId.size(); i++) {
+							if (anchorObjId[i] == tempObjId) {
+								dup = true;
+								break;
+							}
 						}
+
+						//push
+						if (!dup)
+							anchorObjId.push_back(frontLeftEvent->getInt("objid"));
+					}
+					else {
+						//check anchor duplicate
+						bool dup = false;
+						int tempObjId = frontRightEvent->getInt("objid");
+						for (int i = 0; i < anchorObjId.size(); i++) {
+							if (anchorObjId[i] == tempObjId) {
+								dup = true;
+								break;
+							}
+						}
+
+						//push
+						if (!dup)
+							anchorObjId.push_back(frontRightEvent->getInt("objid"));
 					}
 
-					//push
-					if(!dup)
-						anchorObjId.push_back(frontLeftEvent->getInt("objid"));
 				}
-				else {
-					//check anchor duplicate
-					bool dup = false;
-					int tempObjId = frontRightEvent->getInt("objid");
-					for (int i = 0; i < anchorObjId.size(); i++) {
-						if (anchorObjId[i] == tempObjId) {
-							dup = true;
-							break;
-						}
-					}
-
-					//push
-					if (!dup)
-						anchorObjId.push_back(frontRightEvent->getInt("objid"));
+				if (frontLeftEvent->getInt(key) >= frontRightEvent->getInt(key)) {
+					right->pop();
 				}
-
-			}
-			if (frontLeftEvent->getInt(key) >= frontRightEvent->getInt(key)) {
-				right->pop();
-			}
-			else if (frontLeftEvent->getInt(key) < frontRightEvent->getInt(key)) {
-				left->pop();
+				else if (frontLeftEvent->getInt(key) < frontRightEvent->getInt(key)) {
+					left->pop();
+				}
 			}
 		}
 	}else if (Utilities::ToUpper(thisCondition) == "OR") {
