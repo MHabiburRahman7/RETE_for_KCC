@@ -19,6 +19,15 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	
 	queue<EventPtr> final_res;
 
+	//it will execute the query after 
+	if (win->getInitTime() + triggTime < win->getHigheststOriginalTime()) {
+		win->setInitTime(win->getInitTime() + triggTime);
+	}
+	else {
+		//if it is not the time, it will return null
+		return {};
+	}
+
 	if (queryName == "crossing") {
 		queue<pair<EventPtr, EventPtr>> local_event = win->getDoubleRes();
 
@@ -52,7 +61,7 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	else if (queryName == "distance") {
 		// so the window is full, what do we do?
 		//pull the window first
-		queue<EventPtr> res = *win->getFinalRes();
+		queue<EventPtr> res = win->getOriginalRes();
 
 		////distinct the window based on objId
 		//vector<pair<int, queue<EventPtr>>> distinctObj;
@@ -77,9 +86,14 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		unordered_map<int, pair<float, float>> hash_latestUpdate;
 		unordered_map<int, bool> hash_needUpdate;
 
+		//new data, format the tree
+		tree.RemoveAll();
+
 		for (int i = 0; i < anchorObjList.size(); i++) {
-			hash_latestUpdate[i].first = 0;
-			hash_latestUpdate[i].second = 0;
+			//hash_latestUpdate[i].first = 0;
+			//hash_latestUpdate[i].second = 0;
+			hash_latestUpdate[anchorObjList[i]].first = 0;
+			hash_latestUpdate[anchorObjList[i]].second = 0;
 
 			hash_needUpdate[i] = true;
 		}
@@ -162,15 +176,23 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 					nhits_vec = tree.Search_vec(tempAnchor->min, tempAnchor->max, ReturnVal, NULL);
 					//nhits = tree.Search(tempAnchor->min, tempAnchor->max, ReturnVal, NULL);
 
+					//--------------------------------------------------------------------------------
 					Event* e;
 					for (int i = 0; i < nhits_vec.size(); i++) {
 						e = new Event(Utilities::id++, oneTimeEvent.front()->getInt("time"));
 
-						e->addAttr("anchorid", oneTimeEvent.front()->getInt("objid"));
-						e->addAttr("objid", nhits_vec[i]);
+						char buff[4];
+						e->addAttr(queryName, varCondition + " " + _itoa(getLimitFloat(), buff, 10));
+
+						//e->addAttr("anchorid", oneTimeEvent.front()->getInt("objid"));
+						//e->addAttr("objid", nhits_vec[i]);
 
 						final_res.push(EventPtr(e));
 					}
+					//--------------------------------------------------------------------------------
+					//there will be (i am working on it) 2 buffer right now
+					//1. about
+					//
 
 					oneTimeEvent.pop();
 					continue;
@@ -179,6 +201,12 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		}
 #pragma endregion
 
+		//------------------------------------------------------------------------------
+		//querry time -------
+
+		win->addResultEvent(final_res.back());
+
+		//------------------------------------------------------------------------------
 
 /*
 #pragma region ManualDistCalculation
@@ -198,10 +226,12 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	}
 #pragma endregion
 */
-		return final_res;
+		//queue<EventPtr> resultCopy = win->getFinalRes();
+		//return resultCopy;
+		return win->getFinalRes();
 	}
 	else if (queryName == "exist") {
-		return *win->getFinalRes();
+		return win->getFinalRes();
 	}
 
 	return final_res;

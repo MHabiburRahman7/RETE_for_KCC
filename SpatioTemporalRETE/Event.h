@@ -44,6 +44,7 @@ public:
     string getString(string attrName);
     void print(ostream& out);
     string toString();
+    int map_size();
 
     //it returns: current attributes + extension attributes
     Event* extend(const map<string, string>& extendedEntry);

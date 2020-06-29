@@ -25,11 +25,11 @@ public:
 	virtual bool prevNodeAlreadyConnected() = 0;
 	virtual void setWindow(int range, int step) = 0;
 
-	virtual void pushResult(queue<EventPtr>* result, Node*) = 0;
+	virtual void pushResult(queue<EventPtr> result, Node*) = 0;
 
 	virtual int testNode(int TimeSlice) = 0;
 
-	virtual queue<EventPtr>* getEvRes() = 0;
+	virtual queue<EventPtr> getEvRes() = 0;
 
 	string justCondition;
 };

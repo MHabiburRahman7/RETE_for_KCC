@@ -23,7 +23,7 @@ public:
 	bool prevNodeAlreadyConnected();
 
 	//bool isEmptyResult();
-	void pushResult(queue<EventPtr>* result, Node* inputNode);
+	void pushResult(queue<EventPtr> result, Node* inputNode);
 
 	//BetaNode();
 	BetaNode(int id, string condition);
@@ -61,7 +61,7 @@ public:
 	int justTest();
 	void forcePushInQueue(EventPtr* result, bool toLeft = true);
 
-	queue<EventPtr>* getEvRes();
+	queue<EventPtr> getEvRes();
 
 	//WINDOW PART
 	void refreshEvent(queue<EventPtr>& inputEvent);

@@ -28,7 +28,7 @@ public:
 	//int getID();
 	string getType();
 	bool isEmptyResult();
-	void pushResult(queue<EventPtr>* result, Node* inputNode);
+	void pushResult(queue<EventPtr> result, Node* inputNode);
 	Node* getSinglePair(int i);
 	vector<Node*> getAllPairs();
 	bool prevNodeAlreadyConnected();
@@ -58,14 +58,14 @@ public:
 	bool ItIsDirect();
 
 	//Will be depreciated soon
-	queue<EventPtr>* getEvRes();
+	queue<EventPtr> getEvRes();
 
 	//Sliding Window
 	void setWindow(int len = -1, int step = -1);
 
 private:
 	//int id;
-	queue<EventPtr>* EventResult = new queue<EventPtr>();
+	queue<EventPtr> EventResult;
 
 	//Condition -- Still confused
 	string thisDataType;

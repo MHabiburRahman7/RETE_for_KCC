@@ -441,6 +441,9 @@ void ReteNet::ExecuteRete(int TimeSlice)
 
 		if (testStatus == 0) {
 			pushedNode.erase(pushedNode.begin());
+			//for (auto p : pushedNode) {
+
+			//}
 			continue;
 		}
 

@@ -22,8 +22,7 @@ BetaNode::BetaNode(int id_given, string condition)
 
 	rightSourcePair.first = Utilities::lTrim(rightSourcePair.first);
 	rightSourcePair.first = Utilities::rTrim(rightSourcePair.first);
-
-/*
+	
 #pragma region CreateSmallNodeBecauseitContainspatialOp
 
 	if (specialOperation == "") {
@@ -41,6 +40,10 @@ BetaNode::BetaNode(int id_given, string condition)
 			static_cast<BetaNode*>(temp)->addBetaPair(this);
 			leftSourcePair.second = temp;
 			leftInputQueue.second = temp;
+
+			//ok this is just temporary --> i need to put the windor information inside --------------------------------------------------
+			static_cast<BetaNode*>(temp)->setWindow(5, 0);
+			//----------------------------------------------------------------------------------------------------------------------------
 
 			key = "time";
 		}
@@ -66,6 +69,10 @@ BetaNode::BetaNode(int id_given, string condition)
 			rightInputQueue.second = temp;
 
 			key = "time";
+
+			//ok this is just temporary --> i need to put the windor information inside --------------------------------------------------
+			static_cast<BetaNode*>(temp)->setWindow(5, 0);
+			//----------------------------------------------------------------------------------------------------------------------------
 		}
 		if (leftBr > -1 && rightBr > -1 && coma == -1) { //only aggregate function
 			specialOperationLeft = rightSourcePair.first.substr(0, leftBr);
@@ -78,8 +85,7 @@ BetaNode::BetaNode(int id_given, string condition)
 	}
 
 #pragma endregion
-*/
-
+	
 	if (specialOperation != "") {
 		key = "time";
 		thisSpatialOp = new SpatialOp(specialOperation);
@@ -238,7 +244,9 @@ int BetaNode::justTest()
 
 			//push to window
 			if (win) {
-				win->addEvent(leftInputQueue.first.front());
+				//straight to result
+				//win->addEvent(leftInputQueue.first.front());
+				win->addResultEvent(leftInputQueue.first.front());
 			}
 
 			EventResult.push(leftInputQueue.first.front()); //this add 1
@@ -255,21 +263,73 @@ int BetaNode::justTest()
 		//special case for time --> so far we make this system is executed each time ticks. Meaning all input from left or right 
 		//is already at the same time
 		if (key == "time") {
-			//left input also the anchor
-			for (; leftInputQueue.first.size() > 0; leftInputQueue.first.pop()) {
-				if (win) {
-					win->addEvent(leftInputQueue.first.front());
-				}
-				EventResult.push(leftInputQueue.first.front());
+			// if it is talking about special operation, so we need to decide who is the anchor
+			if (specialOperation != "") {
+				//left input also the anchor
+				for (; leftInputQueue.first.size() > 0; leftInputQueue.first.pop()) {
+					if (win) {
+						win->addEvent(leftInputQueue.first.front());
+					}
+					EventResult.push(leftInputQueue.first.front());
 
-				anchorObjId.push_back(leftInputQueue.first.front()->getInt("objid"));
-			}
-			//right input
-			for (; rightInputQueue.first.size() > 0; rightInputQueue.first.pop()) {
-				if (win) {
-					win->addEvent(rightInputQueue.first.front());
+					anchorObjId.push_back(leftInputQueue.first.front()->getInt("objid"));
 				}
-				EventResult.push(rightInputQueue.first.front());
+				//right input
+				for (; rightInputQueue.first.size() > 0; rightInputQueue.first.pop()) {
+					if (win) {
+						win->addEvent(rightInputQueue.first.front());
+					}
+					EventResult.push(rightInputQueue.first.front());
+				}
+			}
+			else {
+				//no need to consider about anchor just match the time
+				//left is less than right - HAVE TO
+				queue<EventPtr>* left, * right;
+				if (leftInputQueue.first.size() <= rightInputQueue.first.size()) {
+					left = &leftInputQueue.first;
+					right = &rightInputQueue.first;
+					anchorIsAtLeft = true;
+				}
+				else
+				{
+					left = &rightInputQueue.first;
+					right = &leftInputQueue.first;
+					anchorIsAtLeft = false;
+				}
+
+				while (1) {
+					if (left->size() == 0 || right->size() == 0)
+						break;
+
+					if (left->size() == 4294967294 || right->size() == 4294967294)
+						break;
+
+					EventPtr frontLeftEvent = left->front();
+					EventPtr frontRightEvent = right->front();
+
+					if (frontLeftEvent->getInt(key) == frontRightEvent->getInt(key)) {
+
+						Event* e = new Event(Utilities::id++, frontLeftEvent->getInt("time"));
+						e->addAttr(thisProduct, "true");
+
+						//push to window
+						if (win) {
+							//no need to consider about original event --> staright to result
+							win->addResultEvent(EventPtr(e));
+						}
+
+						EventResult.push(EventPtr(e));
+
+						left->pop();
+					}
+					if (frontLeftEvent->getInt(key) >= frontRightEvent->getInt(key)) {
+						right->pop();
+					}
+					else if (frontLeftEvent->getInt(key) < frontRightEvent->getInt(key)) {
+						left->pop();
+					}
+				}
 			}
 		}
 		else {
@@ -327,7 +387,6 @@ int BetaNode::justTest()
 						else {
 							//ONE OF THEM MUST BE NEWLY CREATED EVENT ._.
 							if (frontLeftEvent != frontRightEvent) {
-								int z = 0;
 								if (anchorIsAtLeft)
 									win->addEvent(frontLeftEvent);
 								else
@@ -392,12 +451,37 @@ int BetaNode::justTest()
 	
 	if(win != NULL && specialOperation != ""){
 		//Spatial Op
+		EventResult = {};
 		EventResult = thisSpatialOp->process(win, anchorObjId);
 	}
 
 	if (win != NULL && EventResult.size() > 0 && specialOperation == "") {
+		//queue<EventPtr> local_win = win->getFinalRes();
+
+		//for (; EventResult.size() > 0; EventResult.pop()) {
+		//	//EventResult.pop();
+		//}
+
+		//EventResult = win->getFinalRes();
+
+		/*for (; local_win.size() > 0; local_win.pop()) {
+			EventResult.push(local_win.front());
+		}*/
+		
+		/*
 		queue<EventPtr>* local_win = win->getFinalRes();
-		EventResult = *local_win;
+
+		queue<EventPtr> dummy_val = *local_win;
+
+		EventResult = {};
+
+		for (; dummy_val.size() > 0; dummy_val.pop()) {
+			EventResult.push(dummy_val.front());
+		}*/
+
+		//EventResult = *local_win;
+		//EventResult = *win->getFinalRes();
+		int c = 11;
 	}
 
 	//at the end, re evaluate the spatial operation again -- final re evaluation
@@ -405,7 +489,7 @@ int BetaNode::justTest()
 	//PUSH TO PROCEEDING NODE .-.
 	if (listOfNextPair.size() > 0) {
 		for (Node* n : listOfNextPair) {
-			n->pushResult(&EventResult, this);
+			n->pushResult(EventResult, this);
 		}
 	}
 	//If it doesn't have, maybe this is the end?
@@ -419,7 +503,8 @@ int BetaNode::justTest()
 	}
 
 	if (EventResult.size() > 0) {
-		ClearResult();
+		if(listOfNextPair.size() != 0)
+			ClearResult();
 		return 1;
 	}
 	else {
@@ -438,9 +523,9 @@ void BetaNode::forcePushInQueue(EventPtr* result, bool toLeft)
 	}
 }
 
-queue<EventPtr>* BetaNode::getEvRes()
+queue<EventPtr> BetaNode::getEvRes()
 {
-	return &EventResult;
+	return EventResult;
 }
 
 void BetaNode::refreshEvent(queue<EventPtr>& inputEvent) {
@@ -450,19 +535,19 @@ void BetaNode::refreshEvent(queue<EventPtr>& inputEvent) {
 	}*/
 }
 
-void BetaNode::pushResult(queue<EventPtr>* result, Node* source)
+void BetaNode::pushResult(queue<EventPtr> result, Node* source)
 {
-	queue<EventPtr> dummy_res = *result;
+	//queue<EventPtr> dummy_res = *result;
 	if (source == leftInputQueue.second) {
-		while (dummy_res.size() > 0) {
-			leftInputQueue.first.push(dummy_res.front());
-			dummy_res.pop();
+		while (result.size() > 0) {
+			leftInputQueue.first.push(result.front());
+			result.pop();
 		}
 	}
 	else if (source == rightInputQueue.second) {
-		while (dummy_res.size() > 0) {
-			rightInputQueue.first.push(dummy_res.front());
-			dummy_res.pop();
+		while (result.size() > 0) {
+			rightInputQueue.first.push(result.front());
+			result.pop();
 		}
 	}
 	/*if (source == leftInputQueue.second)
@@ -544,7 +629,7 @@ int BetaNode::ResetNode()
 
 int BetaNode::ClearResult()
 {
-	while (!EventResult.empty()) {
+	while (EventResult.size()> 0) {
 		EventResult.pop();
 	}
 	return 1;

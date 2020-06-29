@@ -108,6 +108,11 @@ string Event::toString() {
 	return msg.str();
 }
 
+int Event::map_size()
+{
+	return attrMap.size();
+}
+
 void Event::setDestination(string _destination) {
 	destination = _destination;
 }

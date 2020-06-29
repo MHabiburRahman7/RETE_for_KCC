@@ -75,18 +75,18 @@ bool AlphaNode::ItIsDirect()
 	return directToWM;
 }
 
-queue<EventPtr>* AlphaNode::getEvRes()
+queue<EventPtr> AlphaNode::getEvRes()
 {
 	return EventResult;
 }
 
-void AlphaNode::pushResult(queue<EventPtr>* result, Node*inputNode)
+void AlphaNode::pushResult(queue<EventPtr> result, Node*inputNode)
 {
-	queue<EventPtr> dummy_res = *result;
+	//queue<EventPtr> dummy_res = result;
 	if (inputQueue.second == inputNode) {
-		while (dummy_res.size() > 0) {
-			inputQueue.first.push(dummy_res.front());
-			dummy_res.pop();
+		while (result.size() > 0) {
+			inputQueue.first.push(result.front());
+			result.pop();
 		}
 	}
 		//inputQueue.first = *result;
@@ -140,8 +140,8 @@ int AlphaNode::ResetNode()
 
 int AlphaNode::ClearResults()
 {
-	while (!EventResult->empty()) {
-		EventResult->pop();
+	while (!EventResult.empty()) {
+		EventResult.pop();
 	}
 	return 1;
 }
@@ -172,13 +172,13 @@ int AlphaNode::justTest(int TimeSlice)
 			EventPtr originalFrontEvent = inputQueue.first.front();
 
 			if (thisVarLimit == "All") {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 			else if (cases == 0 && originalFrontEvent->getString(thisDataType) == thisVarLimit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 			else if (cases == 1 && originalFrontEvent->getString(thisDataType) != thisVarLimit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 
 			inputQueue.first.pop();
@@ -207,19 +207,19 @@ int AlphaNode::justTest(int TimeSlice)
 			EventPtr originalFrontEvent = inputQueue.first.front();
 
 			if (cases == 0 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) <= limit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 			else if (cases == 1 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) >= limit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 			else if (cases == 2 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) < limit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 			else if (cases == 3 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) > limit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 			else if (cases == 4 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) == limit) {
-				EventResult->push(originalFrontEvent);
+				EventResult.push(originalFrontEvent);
 			}
 
 			inputQueue.first.pop();
@@ -232,7 +232,7 @@ int AlphaNode::justTest(int TimeSlice)
 		n->pushResult(EventResult, this);
 	}
 	
-	if (EventResult->size() > 0) {
+	if (EventResult.size() > 0) {
 		ClearResults();
 		return 1;
 	}
@@ -243,7 +243,8 @@ int AlphaNode::justTest(int TimeSlice)
 
 bool AlphaNode::isEmptyResult()
 {
-	if (EventResult == NULL || EventResult->size() == 0)
+	//if (EventResult == NULL || EventResult.size() == 0)
+	if (EventResult.size() == 0)
 		return true;
 	return false;
 }

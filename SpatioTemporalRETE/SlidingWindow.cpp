@@ -6,11 +6,17 @@ SlidingWindow::SlidingWindow(int len, int step)
 	winStep = step;//think later
 }
 
-void SlidingWindow::refresh()
+void SlidingWindow::refresh(queue<EventPtr>& eventRes)
 {
-	int latest_time = win_buffer->back()->getInt("time"); // time n untul n - len
-	while (!win_buffer->empty() && win_buffer->front()->getInt("time") < latest_time - winLen) {
-		win_buffer->pop();
+	int latest_time = eventRes.back()->getInt("time"); // time n until n - len
+	
+	//FOR GREATER GOOD :"
+	if (eventRes.front()->map_size() > 999999 || eventRes.front()->map_size() < -1) {
+		eventRes.pop();
+	}
+	int a = 11;
+	while (!eventRes.empty() && eventRes.front()->getInt("time") < latest_time - winLen) {
+		eventRes.pop();
 	}
 
 	/*long long curr = Utilities::getTime();
@@ -29,18 +35,39 @@ void SlidingWindow::refreshDouble()
 
 void SlidingWindow::addEvent(EventPtr e)
 {
-	if (win_buffer->size() > 0) {
+	if (win_buffer.size() > 0) {
 	//	std::sort(win_buffer->front(), win_buffer->back());
 		//duplicate check
-		int duplicate = duplicateCheck(e);
+		int duplicate = duplicateCheck(e, win_buffer);
 		
 		if(duplicate == 0)
-			win_buffer->push(e);
+			win_buffer.push(e);
 	}
 	else
-		win_buffer->push(e);
+		win_buffer.push(e);
 	//
-	refresh();
+	refresh(win_buffer);
+}
+
+void SlidingWindow::addResultEvent(EventPtr e)
+{
+
+	//Event ev = *e->clone();
+	//EventPtr ep;// = Event(ev);
+	//EventPtr(ev);
+	
+	if (win_res_buffer.size() > 0) {
+		//	std::sort(win_buffer->front(), win_buffer->back());
+			//duplicate check
+		int duplicate = duplicateCheck(e, win_res_buffer);
+
+		if (duplicate == 0)
+			win_res_buffer.push(e);
+	}
+	else
+		win_res_buffer.push(e);
+
+	refresh(win_res_buffer);
 }
 
 void SlidingWindow::addEvent(EventPtr a, EventPtr b)
@@ -49,9 +76,9 @@ void SlidingWindow::addEvent(EventPtr a, EventPtr b)
 	refreshDouble();
 }
 
-int SlidingWindow::duplicateCheck(EventPtr a)
+int SlidingWindow::duplicateCheck(EventPtr a, queue<EventPtr> eventRes)
 {
-	queue<EventPtr> tempQueue = *win_buffer;
+	queue<EventPtr> tempQueue = eventRes;
 	while (tempQueue.size() > 0) {
 		if (a == tempQueue.front())
 			return 1;
@@ -71,10 +98,46 @@ int SlidingWindow::duplicateCheck(EventPtr a, EventPtr b)
 	return 1;
 }
 
-queue<EventPtr> *SlidingWindow::getFinalRes()
+queue<EventPtr> SlidingWindow::getFinalRes()
 {
-	refresh();
+	//refresh(win_res_buffer);
+
+	//for(;win_res_buffer.size() > 0; )
+
+	return win_res_buffer;
+}
+
+queue<EventPtr> SlidingWindow::getOriginalRes()
+{
+	refresh(win_buffer);
 	return win_buffer;
+}
+
+float SlidingWindow::getLowestOriginalTime()
+{
+	if (win_buffer.size() > 0) {
+		return win_buffer.front()->getFloat("time");
+	}
+	return -1;
+}
+
+float SlidingWindow::getHigheststOriginalTime()
+{
+	if (win_buffer.size() > 0) {
+		return win_buffer.back()->getFloat("time");
+	}
+	return -1;
+}
+
+float SlidingWindow::getInitTime()
+{
+	return initTime;
+}
+
+float SlidingWindow::setInitTime(float newTime)
+{
+	initTime = newTime;
+	return 1;
 }
 
 queue<pair<EventPtr, EventPtr>> SlidingWindow::getDoubleRes()

@@ -49,6 +49,9 @@ private:
 	string varLimit;
 	string varCondition;
 
+	string triggerType;
+	float triggTime = 3;
+	bool triggerred;
 	//Event tempEvent;
 
 	vector <int> anchorObjList;

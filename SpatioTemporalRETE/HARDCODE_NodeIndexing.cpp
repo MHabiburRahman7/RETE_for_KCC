@@ -40,7 +40,7 @@ struct RectSpatial
 bool ReturnValHere(int id, void* arg)
 {
 	//dynamic_cast<Event*>(arg)->addAttr("leftobj", id);
-	printf("Hit data rect %d\n", id);
+	//printf("Hit data rect %d\n", id);
 	return true; // keep going
 }
 
@@ -401,21 +401,36 @@ int main() {
 	//alphaListIDDictionary.push_back(14);
 
 	//filter the spatial node that we can do indexing
-	vector<Node*> nodewithspatialIndexing;
+	vector<Node*> nodewithspatialIndexing, anchor_node;
 	//list the anchor class
-	vector<pair<string, int>> vec_anchor_id;
+	//vector format --> left input, right input, node id
+	vector<pair<pair<string, string>, int>> vec_anchor_id;
 	for (int i = 0; i < betaListIDDictionary.size(); i++) {
 		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() != "") {
 			nodewithspatialIndexing.push_back(NodeList[betaListIDDictionary[i]]);
-			vec_anchor_id.push_back({ static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), NodeList[betaListIDDictionary[i]]->getID() });
+			vec_anchor_id.push_back({ {static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getRightConnName()}, NodeList[betaListIDDictionary[i]]->getID() });
 		}
 	}
+	////Let's see, what node that considered as anchors?
+	//for (int i = 0; i < nodewithspatialIndexing.size(); i++) {
+	//	anchor_node.push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnNode());
+
+	//	//distinct enemy event
+	//	sort(anchor_node.begin(), anchor_node.end());
+	//	anchor_node.erase(unique(anchor_node.begin(), anchor_node.end()), anchor_node.end());
+	//}
+
+	//this is the event --> gajadi deh
+
+	//hash the object node ids
+	unordered_map<int, vector<pair<float, float>>> hash_latestUpdate;
+	unordered_map<int, bool> hash_needUpdate;
 
 	//generate events
 	queue<EventPtr> wm = generateSamepleLatLong(1000);
 
 	int event_count = 0;
-	while (wm.size() > 990) {
+	while (wm.size() > 900) {
 		
 		int currTime = wm.front()->getInt("time");
 
@@ -435,21 +450,46 @@ int main() {
 		//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
 		RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
 
+		//ok, now lets see, does the events are same?
+		//ok, ok, just consider all of them are allyvessel ._. --> i think we should extract the events first ._.
+		for (int j = 0; j < nodewithspatialIndexing.size(); j++) {
+			//argh cannot think ._.
+
+		}
+
 		//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time t
 		//onetime event contain 2 ally & 2 enemy respectively
 		for (int j = 0; j < vec_anchor_id.size(); j++) {
-			if (vec_anchor_id[j].first == "allyvessel") // ok ok , it is separated perfectly
+			if (vec_anchor_id[j].first.first == "allyvessel") // ok ok , it is separated perfectly --> actually this make the output double ._.
 			{
+				//get current event's position
 				queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
+
+				//first time, everything is new
+				//hash_needUpdate[nodewithspatialIndexing[j]->getID()] = true;
 				for (; anchorEventQueue.size()>0;) {
+
 					float xpos[2], ypos[2];
-					xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-					xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
 
-					ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-					ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+					//just initiated
+					//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
+						xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+						xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
 
-					tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+						ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+						ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+						tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+					//}
+					//really need update
+					//else if (hash_needUpdate[j] == true) {
+
+					//}
+					//else {
+
+					//}
+
+					
 
 					//anchor always on the left --> it is already inside the node
 					/*if (dynamic_cast<BetaNode*>(nodewithspatialIndexing[j])) {
@@ -466,7 +506,7 @@ int main() {
 		vector<EventPtr> distinctEnemyVector = {};
 		vector<int> nhits_vec;
 		for (int j = 0; j < vec_anchor_id.size(); j++) {
-			if (vec_anchor_id[j].first == "allyvessel") // ok ok , it is separated perfectly
+			if (vec_anchor_id[j].first.second == "enemyvessel") // ok ok , it is separated perfectly
 			{
 				queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
 
@@ -479,8 +519,7 @@ int main() {
 				}
 			}
 		}
-
-
+		
 		//------------------------------------------------------------------------------------------------
 		//after it is dinctinct, so we can process the stabbing process
 		for (int i = 0; i < distinctEnemyVector.size(); i++) {
@@ -499,7 +538,7 @@ int main() {
 			for (int j = 0; j < nhits_vec.size(); j++) {
 				Node* tempNode = NodeList[nhits_vec[j]];
 				if (dynamic_cast<BetaNode*>(tempNode)) {
-					//dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&enemyVess[i], false);
+					dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&distinctEnemyVector[i], false);
 
 					pushedNode.push_back(tempNode);
 
@@ -536,6 +575,10 @@ int main() {
 
 			pushedNode.erase(pushedNode.begin());
 		}
+
+		//due to constant movement, so just format the tree
+
+		tree.RemoveAll();
 		int a = 0;
 
 	}
