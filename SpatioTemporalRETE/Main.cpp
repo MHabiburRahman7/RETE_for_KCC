@@ -130,12 +130,18 @@ int main() {
 			vector<vector<pair<string, string>>> colMade;
 			colMade = ReteNet::parseConditionOriginal(made);
 
+			cout << endl << "IF speed>3 & elevation<10 & iff=ally" << endl;
+			cout << "THEN allyvessel" << endl;
+
 			ReteNet::growTheNodes(colMade);
 
 			made = {};
 			made.push_back("IF speed>3 & elevation<10 & iff=enemy");
 			made.push_back("THEN enemyvessel");
 			colMade = ReteNet::parseConditionOriginal(made);
+
+			cout << endl << "IF speed>3 & elevation<10 & iff=enemy" << endl;
+			cout <<"THEN enemyvessel" << endl;
 
 			ReteNet::growTheNodes(colMade);
 
@@ -144,6 +150,10 @@ int main() {
 			made.push_back("IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon");
 			made.push_back("WINDOW range=5");
 			made.push_back("THEN navalthreat");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5" << endl;
+			cout << "THEN enemyvessel" << endl;
 
 			colMade = ReteNet::parseConditionOriginal(made);
 
@@ -155,17 +165,22 @@ int main() {
 			made.push_back("WINDOW range=10");
 			made.push_back("THEN navalresponse");
 
+			cout << endl << "IF exist(navalthreat)" << endl;
+			cout << "WINDOW range=10" << endl;
+			cout << "THEN navalresponse" << endl;
+
 			colMade = ReteNet::parseConditionOriginal(made);
 
 			ReteNet::growTheNodes(colMade);
 
 			ReteNet::buildNetNode();
 
+			cout << endl;
 			cout << "Generate WM EVENTS" << endl;
 			//tempWM = generateSample(1000);
 			tempWM = generateSamepleLatLong(1000);
 
-			cout << "Execute RETE" << endl;
+			cout <<endl<< "Execute RETE" << endl;
 
 			while (tempWM.size() > 0) {
 

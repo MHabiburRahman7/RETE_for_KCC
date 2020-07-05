@@ -86,6 +86,7 @@ BetaNode::BetaNode(int id_given, string condition)
 
 #pragma endregion
 	
+
 	if (specialOperation != "") {
 		key = "time";
 		thisSpatialOp = new SpatialOp(specialOperation);
