@@ -265,6 +265,8 @@ void processRete(int timeSlice, queue<EventPtr>* ev)
 	//BFS based on Queue
 	while (!pushedBeta.empty()) {
 		
+		//This is the borderline ----------------------------------------------------------------------------
+		//let the spatial rule processed outside
 		if (dynamic_cast<BetaNode*>(pushedBeta[0])) {
 			if (dynamic_cast<BetaNode*>(pushedBeta[0])->getSpecialOpName() != "") {
 				pushedBeta.erase(pushedBeta.begin());
@@ -401,7 +403,7 @@ int main() {
 	//alphaListIDDictionary.push_back(14);
 
 	//filter the spatial node that we can do indexing
-	vector<Node*> nodewithspatialIndexing, anchor_node;
+	vector<Node*> nodewithspatialIndexing;
 	//list the anchor class
 	//vector format --> left input, right input, node id
 	vector<pair<pair<string, string>, int>> vec_anchor_id;
@@ -423,8 +425,8 @@ int main() {
 	//this is the event --> gajadi deh
 
 	//hash the object node ids
-	unordered_map<int, vector<pair<float, float>>> hash_latestUpdate;
-	unordered_map<int, bool> hash_needUpdate;
+	//unordered_map<int, vector<pair<float, float>>> hash_latestUpdate;
+	//unordered_map<int, bool> hash_needUpdate;
 
 	//generate events
 	queue<EventPtr> wm = generateSamepleLatLong(1000);

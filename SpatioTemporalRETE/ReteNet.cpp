@@ -7,6 +7,10 @@ vector<int>ReteNet::betaListIDDictionary;
 vector<int>ReteNet::termListIDDictionary;
 vector<Node*> ReteNet::NodeList;
 
+//this is spatio temporal
+vector<Node*> ReteNet::nodewithspatialIndexing;
+vector<pair<pair<string, string>, int>> ReteNet::vec_anchor_id;
+
 vector<vector<pair<string, string>>> ReteNet::parseConditionOriginal(vector<string> condList)
 {
 	//Parsing parsing~
@@ -179,48 +183,6 @@ void ReteNet::connectNodes(Node& n1, Node& n2, Node& n3)
 
 	static_cast<BetaNode*>(&n3)->setLeftConnection(&n1);
 	static_cast<BetaNode*>(&n3)->setRightConnection(&n2);
-
-	////alpha - alpha - beta
-	//if (dynamic_cast<AlphaNode*>(&n1) && dynamic_cast<AlphaNode*>(&n2)
-	//	&& dynamic_cast<BetaNode*>(&n3)) {
-
-	//	static_cast<AlphaNode*>(&n1)->addBetaPair(static_cast<BetaNode*>(&n3));
-	//	static_cast<AlphaNode*>(&n2)->addBetaPair(static_cast<BetaNode*>(&n3));
-
-	//	static_cast<BetaNode*>(&n3)->setLeftConnection(&n1);
-	//	static_cast<BetaNode*>(&n3)->setRightConnection(&n2);
-	//}
-	////beta - alpha - beta
-	//else if (dynamic_cast<BetaNode*>(&n1) && dynamic_cast<AlphaNode*>(&n2)
-	//	&& dynamic_cast<BetaNode*>(&n3)) {
-
-	//	static_cast<BetaNode*>(&n1)->addBetaPair(static_cast<BetaNode*>(&n3));
-	//	static_cast<AlphaNode*>(&n2)->addBetaPair(static_cast<BetaNode*>(&n3));
-
-	//	static_cast<BetaNode*>(&n3)->setLeftConnection(&n1);
-	//	static_cast<BetaNode*>(&n3)->setRightConnection(&n2);
-	//}
-	////alpha - beta - beta
-	//else if (dynamic_cast<AlphaNode*>(&n1) && dynamic_cast<BetaNode*>(&n2)
-	//	&& dynamic_cast<BetaNode*>(&n3)) {
-
-	//	static_cast<AlphaNode*>(&n1)->addBetaPair(static_cast<BetaNode*>(&n3));
-	//	static_cast<BetaNode*>(&n2)->addBetaPair(static_cast<BetaNode*>(&n3));
-
-	//	static_cast<BetaNode*>(&n3)->setLeftConnection(&n1);
-	//	static_cast<BetaNode*>(&n3)->setRightConnection(&n2);
-	//}
-	////beta - beta - beta
-	//else if (dynamic_cast<BetaNode*>(&n1) && dynamic_cast<BetaNode*>(&n2)
-	//	&& dynamic_cast<BetaNode*>(&n3)) {
-
-	//	static_cast<BetaNode*>(&n1)->addBetaPair(static_cast<BetaNode*>(&n3));
-	//	static_cast<BetaNode*>(&n2)->addBetaPair(static_cast<BetaNode*>(&n3));
-
-	//	static_cast<BetaNode*>(&n3)->setLeftConnection(&n1);
-	//	static_cast<BetaNode*>(&n3)->setRightConnection(&n2);
-	//}
-	//terminal - beta - beta --> coming soon ~!!
 }
 
 void ReteNet::connectNodes(Node& n1, Node& n2)
@@ -433,8 +395,15 @@ void ReteNet::ExecuteRete(int TimeSlice)
 
 	//BFS based on Queue
 	while (!pushedNode.empty()) {
-		//if (!static_cast<BetaNode*>(static_cast<BetaNode*>(pushedBeta[0])->getLeftConnNode())->isEmptyResult()
-		//	&& !static_cast<BetaNode*>(static_cast<BetaNode*>(pushedBeta[0])->getRightConnNode())->isEmptyResult()) {
+		
+		//This is the borderline ----------------------------------------------------------------------------
+		//let the spatial rule processed outside
+		if (dynamic_cast<BetaNode*>(pushedNode[0])) {
+			if (dynamic_cast<BetaNode*>(pushedNode[0])->getSpecialOpName() != "") {
+				pushedNode.erase(pushedNode.begin());
+				continue;
+			}
+		}
 
 		//Maybe this is the indexing?
 		int testStatus = pushedNode[0]->testNode(TimeSlice);
@@ -480,6 +449,119 @@ void ReteNet::ExecuteRete(int TimeSlice)
 		if (isDone)
 			break;
 	}
+	int a = 0;
+}
+
+void ReteNet::SpatioTemporalExecution(int TimeSlice)
+{
+	//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
+	RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
+
+	//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time t
+	//onetime event contain 2 ally & 2 enemy respectively
+	for (int j = 0; j < vec_anchor_id.size(); j++) {
+		if (vec_anchor_id[j].first.first == "allyvessel") // ok ok , it is separated perfectly --> actually this make the output double ._.
+		{
+			//get current event's position
+			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
+
+			for (; anchorEventQueue.size() > 0;) {
+
+				float xpos[2], ypos[2];
+
+				//just initiated
+				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
+				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+				tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+
+				anchorEventQueue.pop();
+			}
+		}
+	}
+	//the tree is set now
+
+	//now test with the enemys
+	vector<Node*> pushedNode = {};
+	vector<EventPtr> distinctEnemyVector = {};
+	vector<int> nhits_vec;
+	for (int j = 0; j < vec_anchor_id.size(); j++) {
+		if (vec_anchor_id[j].first.second == "enemyvessel") // ok ok , it is separated perfectly
+		{
+			queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
+
+			for (; testEventQueue.size() > 0; testEventQueue.pop()) {
+				distinctEnemyVector.push_back(testEventQueue.front());
+
+				//distinct enemy event
+				sort(distinctEnemyVector.begin(), distinctEnemyVector.end());
+				distinctEnemyVector.erase(unique(distinctEnemyVector.begin(), distinctEnemyVector.end()), distinctEnemyVector.end());
+			}
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//after it is dinctinct, so we can process the stabbing process
+	for (int i = 0; i < distinctEnemyVector.size(); i++) {
+		float xpos[2], ypos[2];
+		xpos[0] = xpos[1] = distinctEnemyVector[i]->getFloat("lat");
+		ypos[0] = ypos[1] = distinctEnemyVector[i]->getFloat("lon");
+
+		nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
+
+		//distinct the correlated beta nodes that hit
+		sort(nhits_vec.begin(), nhits_vec.end());
+		nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
+
+		//push this into rete net
+		//this must be on the right
+		for (int j = 0; j < nhits_vec.size(); j++) {
+			Node* tempNode = NodeList[nhits_vec[j]];
+			if (dynamic_cast<BetaNode*>(tempNode)) {
+				dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&distinctEnemyVector[i], false);
+
+				pushedNode.push_back(tempNode);
+
+				//sort and distinct
+				sort(pushedNode.begin(), pushedNode.end());
+				pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
+			}
+		}
+	}
+
+	while (!pushedNode.empty()) {
+		//Maybe this is the indexing?
+		int testStatus = pushedNode[0]->testNode(10);
+
+		if (testStatus == 0) {
+			pushedNode.erase(pushedNode.begin());
+			continue;
+		}
+
+		//Activate successor node	
+		for (int i = 0; i < pushedNode[0]->getAllPairs().size(); i++) {
+
+			//Check to avoid duplication
+			bool isDuplicate = false;
+			for (int j = 0; j < pushedNode.size(); j++) {
+				if (pushedNode[0]->getSinglePair(i) == pushedNode[j]) {
+					isDuplicate = true;
+					break;
+				}
+			}
+			if (!isDuplicate)
+				pushedNode.push_back(pushedNode[0]->getSinglePair(i));
+		}
+
+		pushedNode.erase(pushedNode.begin());
+	}
+
+	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
+	tree.RemoveAll();
 	int a = 0;
 }
 
@@ -549,6 +631,14 @@ void ReteNet::buildNetNode()
 		}
 		else
 			continue;
+	}
+
+	//spatio temporal node addressing
+	for (int i = 0; i < betaListIDDictionary.size(); i++) {
+		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() != "") {
+			nodewithspatialIndexing.push_back(NodeList[betaListIDDictionary[i]]);
+			vec_anchor_id.push_back({ {static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getRightConnName()}, NodeList[betaListIDDictionary[i]]->getID() });
+		}
 	}
 	int a = 12;
 }

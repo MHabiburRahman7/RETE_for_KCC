@@ -136,13 +136,38 @@ int main() {
 			cout << "Execute RETE" << endl;
 
 			while (tempWM.size() > 0) {
+
+				/*
+				//this is real time mode --------------------------------------------------
 				EventPtr e = tempWM.front();
 				queue<EventPtr> singlePoint = {};
 				singlePoint.push(e);
 
 				ReteNet::cloneToWm(singlePoint);
+				//-------------------------------------------------------------------------
+				*/
 
+				//this is same-time mode --------------------------------------------------
+				int currTime = tempWM.front()->getInt("time");
+
+				queue<EventPtr> oneTimeEvent = {};
+				while (tempWM.front()->getInt("time") == currTime) {
+					oneTimeEvent.push(tempWM.front());
+					tempWM.pop();
+
+					if (tempWM.size() <= 0)
+						break;
+				}
+
+				ReteNet::cloneToWm(oneTimeEvent);
+				//-------------------------------------------------------------------------
+
+				//do pre-processing
 				ReteNet::ExecuteRete(100);
+
+				//now the spatio temporal thing
+				ReteNet::SpatioTemporalExecution(100);
+
 
 				tempWM.pop();
 			}
