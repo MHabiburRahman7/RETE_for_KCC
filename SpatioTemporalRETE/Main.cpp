@@ -9,6 +9,35 @@ using namespace std;
 
 queue<EventPtr> generateSamepleLatLong(int number) {
 	
+	//queue<EventPtr> ev;
+	////scenario --> 4 vessel - 2 ally, 2 enemy
+
+	//Event* e;
+	//int time_now = 0;
+	//for (int i = 0; i < number; i++) {
+	//	e = new Event(Utilities::id++, time_now);
+	//	if (i % 4 == 3)
+	//		time_now++;
+
+	//	if (i % 2 == 0) {
+	//		e->addAttr("iff", "ally");
+	//	}
+	//	else {
+	//		e->addAttr("iff", "enemy");
+	//	}
+
+	//	e->addAttr("type", "recon");
+	//	e->addAttr("lon", (float)Utilities::randomFloat(127, 129));
+	//	e->addAttr("lat", (float)Utilities::randomFloat(35, 37));
+	//	float ele = (float)Utilities::randomFloat(0, 10);
+
+	//	e->addAttr("objid", i % 4);
+
+	//	ev.push(EventPtr(e));
+	//}
+
+	//return ev;
+
 	queue<EventPtr> ev;
 	//scenario --> 4 vessel - 2 ally, 2 enemy
 
@@ -20,16 +49,18 @@ queue<EventPtr> generateSamepleLatLong(int number) {
 			time_now++;
 
 		if (i % 2 == 0) {
-			e->addAttr("iff", "ally");
+			e->addAttr("iff", "ally"); // scalar
 		}
 		else {
 			e->addAttr("iff", "enemy");
 		}
 
-		e->addAttr("type", "recon");
-		e->addAttr("lon", (float)Utilities::randomFloat(127, 129));
-		e->addAttr("lat", (float)Utilities::randomFloat(35, 37));
+		e->addAttr("type", "recon"); //sclar
+		e->addAttr("speed", (float)Utilities::randomFloat(3, 10)); //scalar
+		e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial
+		e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial
 		float ele = (float)Utilities::randomFloat(0, 10);
+		e->addAttr("elevation", ele); //scalar
 
 		e->addAttr("objid", i % 4);
 
@@ -131,7 +162,8 @@ int main() {
 			ReteNet::buildNetNode();
 
 			cout << "Generate WM EVENTS" << endl;
-			tempWM = generateSample(1000);
+			//tempWM = generateSample(1000);
+			tempWM = generateSamepleLatLong(1000);
 
 			cout << "Execute RETE" << endl;
 
