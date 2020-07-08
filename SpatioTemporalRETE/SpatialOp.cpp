@@ -272,12 +272,12 @@ EventPtr SpatialOp::calculate(EventPtr a, EventPtr b)
 void SpatialOp::setVarLimit(string limit)
 {
 	//because it is latitude and longitude, so 0.1 lat or long equal with 10 km
-	/*float temp;
+	float temp;
 	temp = atof(limit.c_str());
 	temp /= 100;
-	varLimit = to_string(temp);*/
+	varLimit = to_string(temp);
 	
-	varLimit = limit;
+	//varLimit = limit;
 }
 
 void SpatialOp::setVarCondition(string cond)

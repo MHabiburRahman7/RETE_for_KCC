@@ -9,6 +9,7 @@
 #include "RTree.h"
 
 #include <list>
+#include <algorithm>
 
 
 struct Rect3dim

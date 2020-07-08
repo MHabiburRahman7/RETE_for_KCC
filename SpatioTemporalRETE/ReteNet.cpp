@@ -463,14 +463,105 @@ void ReteNet::ExecuteRete(int TimeSlice)
 	int a = 0;
 }
 
+vector<int> findCorrespondingAnchor(string objType, vector<string> dictionary) {
+	vector<int> result = {};
+	for (int i = 0; i < dictionary.size(); i++) {
+		if (objType == dictionary[i])
+			result.push_back(i);
+	}
+	return result;
+}
+
 void ReteNet::SpatioTemporalExecution(int TimeSlice)
 {
 	//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
-	RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
 
-	RTree<int, float, 3, float> Full3dTree; // lat, long, anchor_enum
 
+//#pragma region Original2Dimension
+//	RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
+//	//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time t
+//	//onetime event contain 2 ally & 2 enemy respectively
+//	for (int j = 0; j < vec_anchor_id.size(); j++) {
+//		if (vec_anchor_id[j].first.first == "allyvessel") // ok ok , it is separated perfectly --> actually this make the output double ._.
+//		{
+//			//get current event's position
+//			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
+//
+//			for (; anchorEventQueue.size() > 0;) {
+//
+//				float xpos[2], ypos[2];
+//
+//				//just initiated
+//				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
+//				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+//				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+//
+//				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+//				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+//
+//				tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+//
+//				anchorEventQueue.pop();
+//			}
+//		}
+//	}
+//	//the tree is set now
+//
+//	//now test with the enemys
+//	vector<Node*> pushedNode = {};
+//	vector<EventPtr> distinctEnemyVector = {};
+//	vector<int> nhits_vec;
+//	for (int j = 0; j < vec_anchor_id.size(); j++) {
+//		if (vec_anchor_id[j].first.second == "enemyvessel") // ok ok , it is separated perfectly
+//		{
+//			queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
+//
+//			for (; testEventQueue.size() > 0; testEventQueue.pop()) {
+//				distinctEnemyVector.push_back(testEventQueue.front());
+//
+//				//distinct enemy event
+//				sort(distinctEnemyVector.begin(), distinctEnemyVector.end());
+//				distinctEnemyVector.erase(unique(distinctEnemyVector.begin(), distinctEnemyVector.end()), distinctEnemyVector.end());
+//			}
+//		}
+//	}
+//
+//	//------------------------------------------------------------------------------------------------
+//	//after it is dinctinct, so we can process the stabbing process
+//	for (int i = 0; i < distinctEnemyVector.size(); i++) {
+//		float xpos[2], ypos[2];
+//		xpos[0] = xpos[1] = distinctEnemyVector[i]->getFloat("lat");
+//		ypos[0] = ypos[1] = distinctEnemyVector[i]->getFloat("lon");
+//
+//		nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
+//
+//		//distinct the correlated beta nodes that hit
+//		sort(nhits_vec.begin(), nhits_vec.end());
+//		nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
+//
+//		//push this into rete net
+//		//this must be on the right
+//		for (int j = 0; j < nhits_vec.size(); j++) {
+//			Node* tempNode = NodeList[nhits_vec[j]];
+//			if (dynamic_cast<BetaNode*>(tempNode)) {
+//				dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&distinctEnemyVector[i], false);
+//
+//				pushedNode.push_back(tempNode);
+//
+//				//sort and distinct
+//				sort(pushedNode.begin(), pushedNode.end());
+//				pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
+//			}
+//		}
+//	}
+//
+//#pragma endregion
+
+#pragma region 3DimRegion
+	RTree<int, float, 3, float> tree; // lat, long, anchor_enum
 	//enum dictionaries --> well it is based on the hash map then
+	//number of vec_anchor_id and nodewithspatialindex are same
+	//the difference is just one only handle string, one handle the node also
 	for (int j = 0; j < vec_anchor_id.size(); j++) {
 		if (anchor_stab_map.find(vec_anchor_id[j].first.first) != anchor_stab_map.end()) // check based on the dictionaries
 		{
@@ -479,7 +570,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 
 			for (; anchorEventQueue.size() > 0;) {
 
-				float xpos[2], ypos[2];
+				float xpos[3], ypos[3];
 
 				//just initiated
 				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
@@ -489,88 +580,91 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
 				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
 
-				tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+				//3rd dimension is the enum
+				vector<int> corresponding_dimension = findCorrespondingAnchor(static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightConnName(), observed_obj_dict);
+				for (int k = 0; k < corresponding_dimension.size(); k++) {
+					xpos[2] = corresponding_dimension[k];
+					ypos[2] = corresponding_dimension[k];
+
+					tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+				}
 
 				anchorEventQueue.pop();
 			}
 		}
 	}
 
-	//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time t
-	//onetime event contain 2 ally & 2 enemy respectively
-	for (int j = 0; j < vec_anchor_id.size(); j++) {
-		if (vec_anchor_id[j].first.first == "allyvessel") // ok ok , it is separated perfectly --> actually this make the output double ._.
-		{
-			//get current event's position
-			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
-
-			for (; anchorEventQueue.size() > 0;) {
-
-				float xpos[2], ypos[2];
-
-				//just initiated
-				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
-				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-
-				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-
-				tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
-
-				anchorEventQueue.pop();
-			}
-		}
-	}
 	//the tree is set now
-
+	
 	//now test with the enemys
 	vector<Node*> pushedNode = {};
-	vector<EventPtr> distinctEnemyVector = {};
+	//vector<EventPtr> distinctTestedObj = {};
+	vector<vector<EventPtr>> organizedTestEvents = {};
 	vector<int> nhits_vec;
-	for (int j = 0; j < vec_anchor_id.size(); j++) {
-		if (vec_anchor_id[j].first.second == "enemyvessel") // ok ok , it is separated perfectly
-		{
-			queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
-
-			for (; testEventQueue.size() > 0; testEventQueue.pop()) {
-				distinctEnemyVector.push_back(testEventQueue.front());
-
-				//distinct enemy event
-				sort(distinctEnemyVector.begin(), distinctEnemyVector.end());
-				distinctEnemyVector.erase(unique(distinctEnemyVector.begin(), distinctEnemyVector.end()), distinctEnemyVector.end());
-			}
-		}
+	
+	//initiate the organizedTestEvents
+	for (int j = 0; j < observed_obj_dict.size(); j++) {
+		organizedTestEvents.push_back({});
 	}
 
+	
+	for (int j = 0; j < vec_anchor_id.size(); j++) {
+
+		//find is it belong to which index?
+		std::vector<string>::iterator it;
+		it = find(observed_obj_dict.begin(), observed_obj_dict.end(), vec_anchor_id[j].first.second);
+		int dist = distance(observed_obj_dict.begin(), it);
+
+		//int dist = 0;
+
+		//assign to each observed index
+		queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
+		for (; testEventQueue.size() > 0; testEventQueue.pop()) {
+
+			organizedTestEvents[dist].push_back(testEventQueue.front());
+		}
+
+		//distinct enemy event
+		sort(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end());
+		organizedTestEvents[dist].erase(unique(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end()), organizedTestEvents[dist].end());
+	}
+	
 	//------------------------------------------------------------------------------------------------
 	//after it is dinctinct, so we can process the stabbing process
-	for (int i = 0; i < distinctEnemyVector.size(); i++) {
-		float xpos[2], ypos[2];
-		xpos[0] = xpos[1] = distinctEnemyVector[i]->getFloat("lat");
-		ypos[0] = ypos[1] = distinctEnemyVector[i]->getFloat("lon");
+	//organizedevents is organized as follow --> [dictionary id][vector of event pointer]
+	for (int i = 0; i < organizedTestEvents.size(); i++) {
+		for (int j = 0; j < organizedTestEvents[i].size(); j++) {
 
-		nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
+			float xpos[3], ypos[3];
+			xpos[0] = xpos[1] = organizedTestEvents[i][j]->getFloat("lat");
+			ypos[0] = ypos[1] = organizedTestEvents[i][j]->getFloat("lon");
 
-		//distinct the correlated beta nodes that hit
-		sort(nhits_vec.begin(), nhits_vec.end());
-		nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
+			xpos[2] = ypos[2] = i; // i is dictionary id
 
-		//push this into rete net
-		//this must be on the right
-		for (int j = 0; j < nhits_vec.size(); j++) {
-			Node* tempNode = NodeList[nhits_vec[j]];
-			if (dynamic_cast<BetaNode*>(tempNode)) {
-				dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&distinctEnemyVector[i], false);
+			nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
 
-				pushedNode.push_back(tempNode);
+			//distinct the correlated beta nodes that hit
+			sort(nhits_vec.begin(), nhits_vec.end());
+			nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
 
-				//sort and distinct
-				sort(pushedNode.begin(), pushedNode.end());
-				pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
+			//push this into rete net
+			//this must be on the right
+			for (auto n : nhits_vec) {
+				Node* tempNode = NodeList[n];
+				if (dynamic_cast<BetaNode*>(tempNode)) {
+					dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&organizedTestEvents[i][j], false);
+
+					pushedNode.push_back(tempNode);
+
+					//sort and distinct
+					sort(pushedNode.begin(), pushedNode.end());
+					pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
+				}
 			}
 		}
 	}
+
+#pragma endregion	
 
 	while (!pushedNode.empty()) {
 		//Maybe this is the indexing?
@@ -601,7 +695,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 
 	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
 	tree.RemoveAll();
-	int a = 0;
+	
 }
 
 void ReteNet::buildNetNode()
@@ -679,6 +773,12 @@ void ReteNet::buildNetNode()
 			vec_anchor_id.push_back({ {static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getRightConnName()}, NodeList[betaListIDDictionary[i]]->getID() });
 		}
 	}
+	//discritize vec_anchor_id & node w/ spatial indexing
+	sort(vec_anchor_id.begin(), vec_anchor_id.end());
+	vec_anchor_id.erase(unique(vec_anchor_id.begin(), vec_anchor_id.end()), vec_anchor_id.end());
+	sort(nodewithspatialIndexing.begin(), nodewithspatialIndexing.end());
+	nodewithspatialIndexing.erase(unique(nodewithspatialIndexing.begin(), nodewithspatialIndexing.end()), nodewithspatialIndexing.end());
+
 
 	//address the anchor and stabber
 	//format = anchor -- desired stabber

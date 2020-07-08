@@ -57,8 +57,10 @@ queue<EventPtr> generateSamepleLatLong(int number) {
 
 		e->addAttr("type", "recon"); //sclar
 		e->addAttr("speed", (float)Utilities::randomFloat(3, 10)); //scalar
-		e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial
-		e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial
+		//e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial
+		//e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial
+		e->addAttr("lon", (float)Utilities::randomFloat(120, 121)); //spatial
+		e->addAttr("lat", (float)Utilities::randomFloat(30, 31)); //spatial
 		float ele = (float)Utilities::randomFloat(0, 10);
 		e->addAttr("elevation", ele); //scalar
 
@@ -110,15 +112,19 @@ int main() {
 	queue<EventPtr> tempWM;
 
 	cout << "select what you want " << endl;
-	cout << "0. manually input the rule " << endl;
-	cout << "1. generate pre defined rule" << endl;
-	cout << "2. generate random event" << endl;
-	cout << "3. run rete" << endl;
+	cout << "0. exit " << endl;
+	cout << "1. manually input the rule " << endl;
+	cout << "2. generate pre defined rule" << endl;
+	cout << "3. generate random event" << endl;
+	cout << "4. run rete" << endl;
 	cin >> select;
 	while (select <= 20) {
 		switch (select) {
 			cin.ignore();
 		case 0: {
+			return 0;
+		}
+		case 1: {
 			string temp;
 			vector<string> master_str;
 			cout << "start with IF and finish with THEN" << endl;
@@ -143,7 +149,7 @@ int main() {
 
 			break;
 		}
-		case 1: {
+		case 2: {
 
 			cout << "Rules for checking distance" << endl;
 
@@ -171,11 +177,11 @@ int main() {
 
 			//SPATIAL IF ELSE
 			made = {};
-			made.push_back("IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon");
+			made.push_back("IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon");
 			made.push_back("WINDOW range=5, trigger=5");
 			made.push_back("THEN navalthreat");
 
-			cout << endl << "IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon" << endl;
+			cout << endl << "IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon" << endl;
 			cout << "WINDOW range=5, trigger=5" << endl;
 			cout << "THEN enemyvessel" << endl;
 
@@ -200,7 +206,7 @@ int main() {
 			ReteNet::buildNetNode();
 
 			break;
-		}case 2: {
+		}case 3: {
 
 			cout << endl;
 			cout << "Generate WM EVENTS" << endl << endl;
@@ -210,7 +216,7 @@ int main() {
 			tempWM = generateSamepleLatLong(n);
 
 			break;
-		}case 3: {
+		}case 4: {
 
 			ReteNet::buildNetNode();
 
