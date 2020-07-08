@@ -79,13 +79,6 @@ void SlidingWindow::addResultEvent(EventPtr e)
 
 		if (duplicate == 0)
 			win_res_buffer.push(EventPtr(backup_event));
-
-
-		//duplicate check
-		//int duplicate = duplicateCheck(e, win_res_buffer);
-
-		//if (duplicate == 0)
-		//	win_res_buffer.push(e);
 	}
 	else
 		win_res_buffer.push(EventPtr(ev));
@@ -102,10 +95,9 @@ void SlidingWindow::addEvent(EventPtr a, EventPtr b)
 int SlidingWindow::duplicateCheck(EventPtr a, queue<EventPtr> eventRes)
 {
 	queue<EventPtr> tempQueue = eventRes;
-	while (tempQueue.size() > 0) {
+	for (; tempQueue.size() > 0; tempQueue.pop()) {
 		if (a == tempQueue.front())
 			return 1;
-		tempQueue.pop();
 	}
 	return 0;
 }

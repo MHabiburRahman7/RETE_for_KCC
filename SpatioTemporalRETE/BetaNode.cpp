@@ -225,6 +225,11 @@ bool BetaNode::isEmptyResult()
 	return false;
 }
 
+bool compareQueue(EventPtr a, EventPtr b)
+{
+	return (a->getInt("time") < b->getInt("time"));
+}
+
 int BetaNode::justTest()
 {
 	//dont forget about acnhor
@@ -265,38 +270,65 @@ int BetaNode::justTest()
 		//is already at the same time
 		if (key == "time") {
 			// if it is talking about special operation, so we need to decide who is the anchor
-			if (specialOperation != "") {
+			if (specialOperation == "distance") { // woo, woo, this is for distance node anyway ._.
 				//left input also the anchor
-				for (; leftInputQueue.first.size() > 0; leftInputQueue.first.pop()) {
-					if (win) {
-						win->addEvent(leftInputQueue.first.front());
-					}
-					EventResult.push(leftInputQueue.first.front());
+				queue<EventPtr> tempQueue;
+				vector<EventPtr> tempVecQueue;
 
+				for (; leftInputQueue.first.size() > 0; leftInputQueue.first.pop()) {
+					tempVecQueue.push_back(leftInputQueue.first.front());
 					anchorObjId.push_back(leftInputQueue.first.front()->getInt("objid"));
 				}
 				//right input
 				for (; rightInputQueue.first.size() > 0; rightInputQueue.first.pop()) {
-					if (win) {
-						win->addEvent(rightInputQueue.first.front());
-					}
-					EventResult.push(rightInputQueue.first.front());
+					tempVecQueue.push_back(rightInputQueue.first.front());
 				}
+
+				sort(tempVecQueue.begin(), tempVecQueue.end(), compareQueue);
+				tempVecQueue.erase(unique(tempVecQueue.begin(), tempVecQueue.end()), tempVecQueue.end());
+				
+				for (auto ve : tempVecQueue) {
+					if (win)
+						win->addEvent(ve);
+					EventResult.push(ve);
+				}
+
+				int a = 10;
 			}
 			else {
 				//no need to consider about anchor just match the time
+				//if one of them is distance, so that distance contain the original data ._.
+				int distanceOnLeft = leftSourcePair.first.find("distance");
+				int distanceOnRight = rightSourcePair.first.find("distance");
+				bool contain_distance = false, distanceIsAtLeft = true;
+				if (distanceOnLeft > -1 || distanceOnRight > -1) {
+					contain_distance = true;
+					if (distanceOnRight > -1)
+						distanceIsAtLeft = false;
+				}
+
 				//left is less than right - HAVE TO
 				queue<EventPtr>* left, * right;
-				if (leftInputQueue.first.size() <= rightInputQueue.first.size()) {
+				if (leftInputQueue.first.size() <= rightInputQueue.first.size()) { // normal
 					left = &leftInputQueue.first;
 					right = &rightInputQueue.first;
 					anchorIsAtLeft = true;
+
+					if (contain_distance && distanceIsAtLeft)
+						distanceIsAtLeft = true;
+					else
+						distanceIsAtLeft = false;
 				}
 				else
-				{
+				{ //flip
 					left = &rightInputQueue.first;
 					right = &leftInputQueue.first;
 					anchorIsAtLeft = false;
+
+					if (contain_distance && distanceIsAtLeft)
+						distanceIsAtLeft = false;
+					else
+						distanceIsAtLeft = true;
 				}
 
 				while (1) {
@@ -311,20 +343,41 @@ int BetaNode::justTest()
 
 					if (frontLeftEvent->getInt(key) == frontRightEvent->getInt(key)) {
 
-						Event* e = new Event(Utilities::id++, frontLeftEvent->getInt("time"));
-						e->addAttr(thisProduct, "true");
-						
-						Event* r = e->clone();
+						if (contain_distance) {
+							Event* e;
+							if (distanceIsAtLeft)
+								e = frontLeftEvent->clone();
+							else
+								e = frontRightEvent->clone();
 
-						//push to window
-						if (win) {
-							//no need to consider about original event --> staright to result
-							win->addResultEvent(EventPtr(e));
+							Event* r = e->clone();
+
+							if(win)
+								win->addResultEvent(EventPtr(e));
+
+							EventResult.push(EventPtr(r));
+							//left->pop();
 						}
+						else {
+							//no distance, just put new event
+							Event* e = new Event(Utilities::id++, frontLeftEvent->getInt("time"));
+							e->addAttr(thisProduct, "true");
 
-						EventResult.push(EventPtr(r));
-					
-						left->pop();
+							//so it should be left and right already get the anchors
+							e->addAttr("anchors", frontLeftEvent->getString("anchors"));
+
+							Event* r = e->clone();
+
+							//push to window
+							if (win) {
+								//no need to consider about original event --> staright to result
+								win->addResultEvent(EventPtr(e));
+							}
+
+							EventResult.push(EventPtr(r));
+
+							left->pop();
+						}
 					}
 					if (frontLeftEvent->getInt(key) >= frontRightEvent->getInt(key)) {
 						right->pop();
@@ -333,6 +386,8 @@ int BetaNode::justTest()
 						left->pop();
 					}
 				}
+
+				//int c = 10;
 			}
 		}
 		else {
@@ -485,7 +540,7 @@ int BetaNode::justTest()
 		//EventResult = *local_win;
 		ClearResult();
 		EventResult = win->getFinalRes();
-		int c = 11;
+		//int c = 11;
 	}
 
 	//at the end, re evaluate the spatial operation again -- final re evaluation
@@ -640,5 +695,16 @@ int BetaNode::ClearResult()
 	//queue<EventPtr> empty;
 	//swap(EventResult, empty);
 
+	return 1;
+}
+
+int BetaNode::ClearInputQueue(bool isLeft = false)
+{
+	if (isLeft) {
+		leftInputQueue.first = {};
+	}
+	else {
+		rightInputQueue.first = {};
+	}
 	return 1;
 }

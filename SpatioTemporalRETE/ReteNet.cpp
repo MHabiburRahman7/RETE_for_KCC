@@ -279,6 +279,15 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 
 						connectNodes(*n1, *n2, *n3);
 
+						if (range > 0 || step > 0) {
+							if (n1 != NULL)
+								(n1)->setWindow(range, step);
+							if (n2 != NULL)
+								(n2)->setWindow(range, step);
+							if (n2 != NULL)
+								(n3)->setWindow(range, step);
+						}
+
 						created_node.push_back(n3);
 					}
 					else { // if there are no node created before
@@ -300,6 +309,15 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 
 						connectNodes(*n1, *n2, *n3);
 
+						if (range > 0 || step > 0) {
+							if (n1 != NULL)
+								(n1)->setWindow(range, step);
+							if (n2 != NULL)
+								(n2)->setWindow(range, step);
+							if (n2 != NULL)
+								(n3)->setWindow(range, step);
+						}
+
 						created_node.push_back(n3);
 					}
 				}
@@ -320,8 +338,14 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 
 					n3 = addBetaReturnNode(tempBetaCondition + " then " + exp_vec[i][0].second);
 					
-					if(range > 0 || step > 0)
-						(n3)->setWindow(range, step);
+					if (range > 0 || step > 0) {
+						if (n1 != NULL)
+							(n1)->setWindow(range, step);
+						if (n2 != NULL)
+							(n2)->setWindow(range, step);
+						if (n2 != NULL)
+							(n3)->setWindow(range, step);
+					}
 
 					connectNodes(*n1, *n2, *n3);
 				}
@@ -351,8 +375,14 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 					compiled_expression.pop_back();
 
 					n3 = addBetaReturnNode(tempBetaCondition + " then " + exp_vec[i][0].second);
-					if (range > 0 || step > 0)
-						(n3)->setWindow(range, step);
+					if (range > 0 || step > 0) {
+						if(n1!=NULL)
+							(n1)->setWindow(range, step);
+						if(n2!=NULL)
+							(n2)->setWindow(range, step);
+						if(n2!=NULL)
+							(n3)->setWindow(range, step);
+					}
 
 					connectNodes(*n1, *n2, *n3);
 				}
@@ -475,7 +505,6 @@ vector<int> findCorrespondingAnchor(string objType, vector<string> dictionary) {
 void ReteNet::SpatioTemporalExecution(int TimeSlice)
 {
 	//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
-
 
 //#pragma region Original2Dimension
 //	RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
@@ -614,9 +643,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 		std::vector<string>::iterator it;
 		it = find(observed_obj_dict.begin(), observed_obj_dict.end(), vec_anchor_id[j].first.second);
 		int dist = distance(observed_obj_dict.begin(), it);
-
-		//int dist = 0;
-
+		
 		//assign to each observed index
 		queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
 		for (; testEventQueue.size() > 0; testEventQueue.pop()) {
@@ -627,6 +654,11 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 		//distinct enemy event
 		sort(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end());
 		organizedTestEvents[dist].erase(unique(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end()), organizedTestEvents[dist].end());
+
+		//empty the node
+		// it have to be the right one ._.
+		queue<EventPtr> ept = {};
+		static_cast<BetaNode*>(nodewithspatialIndexing[j])->ClearInputQueue(false);
 	}
 	
 	//------------------------------------------------------------------------------------------------
@@ -783,6 +815,15 @@ void ReteNet::buildNetNode()
 	//address the anchor and stabber
 	//format = anchor -- desired stabber
 	for (int i = 0; i < nodewithspatialIndexing.size(); i++) {
+
+		/*
+		anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName());
+		//remove the duplicate
+		sort(anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].begin(), anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].end());
+		anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].erase(unique(anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].begin(), 
+			anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].end()), anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].end());
+		*/
+
 		//not exist
 		if (anchor_stab_map.find(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()) == anchor_stab_map.end()) {
 			vector<string> temp;

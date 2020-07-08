@@ -36,6 +36,7 @@ public:
 	int ClearConnection();
 	int ResetNode();
 	int ClearResult();
+	int ClearInputQueue(bool isLeft);
 
 	//getSet Function
 	string getProduct();

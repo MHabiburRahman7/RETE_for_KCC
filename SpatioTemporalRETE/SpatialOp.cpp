@@ -79,7 +79,21 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		//	res.pop();
 		//}
 
-		
+		//we don't need to re-calculate based on r-tree again, because it is already calculated by node indexing
+		//we just pass all of the input buffer to result buffer
+		//dont forget to pass the anchors
+		string tempAnchors;
+		char buff[10];
+		for (auto a : anchorObjList) {
+			tempAnchors += _itoa(a, buff, 10);
+			tempAnchors += ",";
+		}
+		for (;res.size() > 0;res.pop()) {
+			res.front()->addAttr("anchors", tempAnchors);
+
+			win->addResultEvent(res.front());
+		}
+/*
 #pragma region RTreeRegion
 		RTree<int, float, 2, float> tree;
 
@@ -199,14 +213,15 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 				}
 			}
 		}
-#pragma endregion
-
 		//------------------------------------------------------------------------------
 		//querry time -------
-		if(final_res.size() > 0)
+		if (final_res.size() > 0)
 			win->addResultEvent(final_res.back());
 
 		//------------------------------------------------------------------------------
+
+#pragma endregion
+		*/
 
 /*
 #pragma region ManualDistCalculation
@@ -226,11 +241,98 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	}
 #pragma endregion
 */
-		//queue<EventPtr> resultCopy = win->getFinalRes();
-		//return resultCopy;
+
+
 		return win->getFinalRes();
 	}
 	else if (queryName == "exist") {
+	//at least there is one of it, so it is considered as true
+		queue<EventPtr> res = win->getOriginalRes();
+
+		if (res.size() > 0) {
+			Event* e = new Event(Utilities::id++, res.back()->getInt("time"));
+			win->addResultEvent(EventPtr(e));
+		}
+		
+		return win->getFinalRes();
+	}
+	else if (queryName == "stay") {
+		queue<EventPtr> res = win->getOriginalRes();
+
+		//separate each event
+		map<int, vector<int>> separatedEvents;
+		for (; res.size() > 0; res.pop()) {
+			//separatedEvents[res.front()->getInt("objid")].push(res.front());
+			separatedEvents[res.front()->getInt("time")].push_back(res.front()->getInt("objid"));
+		}
+
+		int old_diff = separatedEvents.begin()->second.size();
+		int new_diff = separatedEvents.begin()->second.size();
+		int lastTime = 0;
+		bool ischanged = false;
+
+		for (auto& it : separatedEvents) {
+			new_diff = it.second.size();
+			if (old_diff != new_diff) { //this is the difference
+				ischanged = true;
+			}
+			old_diff = new_diff;
+			lastTime = it.first;
+		}
+
+		if (!ischanged) {
+			Event* e = new Event(Utilities::id++, lastTime);
+			win->addResultEvent(EventPtr(e));
+		}
+
+		return win->getFinalRes();
+	}
+	else if (queryName == "exit") {// exit, enter, and stay is pretty simillar
+		queue<EventPtr> res = win->getOriginalRes();
+
+		//separate each event
+		map<int, vector<int>> separatedEvents;
+		for (; res.size() > 0; res.pop()) {
+			//separatedEvents[res.front()->getInt("objid")].push(res.front());
+			separatedEvents[res.front()->getInt("time")].push_back(res.front()->getInt("objid"));
+		}
+
+		int old_diff = separatedEvents.begin()->second.size();
+		int new_diff = separatedEvents.begin()->second.size();
+
+		for (auto& it : separatedEvents) {
+			new_diff = it.second.size();
+			if (old_diff > new_diff) { // this is the difference
+				Event* e = new Event(Utilities::id++, it.first);
+				win->addResultEvent(EventPtr(e));
+			}
+			old_diff = new_diff;
+		}
+
+		return win->getFinalRes();
+	}
+	else if (queryName == "enter") { // exit, enter, and stay is pretty simillar
+		queue<EventPtr> res = win->getOriginalRes();
+
+		//separate each event
+		map<int, vector<int>> separatedEvents;
+		for (; res.size() > 0 ;res.pop()) {
+			//separatedEvents[res.front()->getInt("objid")].push(res.front());
+			separatedEvents[res.front()->getInt("time")].push_back(res.front()->getInt("objid"));
+		}
+
+		int old_diff = separatedEvents.begin()->second.size();
+		int new_diff = separatedEvents.begin()->second.size();
+
+		for (auto &it : separatedEvents) {
+			new_diff = it.second.size();
+			if (old_diff < new_diff) { // this is the difference
+				Event* e = new Event(Utilities::id++, it.first);
+				win->addResultEvent(EventPtr(e));
+			}
+			old_diff = new_diff;
+		}
+
 		return win->getFinalRes();
 	}
 
@@ -322,12 +424,12 @@ float SpatialOp::getLimitFloat()
 	return atof(varLimit.c_str());
 }
 
-bool SpatialOp::intersectLineSegment(EventPtr StartA, EventPtr EndB, EventPtr StartC, EventPtr EndD)
+bool SpatialOp::intersectLineSegment(EventPtr StartA, EventPtr EndA, EventPtr StartB, EventPtr EndB)
 {
 	pair<float, float> A({ StartA->getFloat("lat"), StartA->getFloat("lon") });
-	pair<float, float> B({ EndB->getFloat("lat"), EndB->getFloat("lon") });
-	pair<float, float> C({ StartC->getFloat("lat"), StartC->getFloat("lon") });
-	pair<float, float> D({ EndD->getFloat("lat"), EndD->getFloat("lon") });
+	pair<float, float> B({ EndA->getFloat("lat"), EndA->getFloat("lon") });
+	pair<float, float> C({ StartB->getFloat("lat"), StartB->getFloat("lon") });
+	pair<float, float> D({ EndB->getFloat("lat"), EndB->getFloat("lon") });
 
 	float CmPx = C.first - A.first;
 	float CmPy = C.second - A.second;

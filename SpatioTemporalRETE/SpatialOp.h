@@ -42,7 +42,7 @@ public:
 	float getLimitFloat();
 
 	//Ok, this is new
-	bool intersectLineSegment(EventPtr A, EventPtr B, EventPtr C, EventPtr D);
+	bool intersectLineSegment(EventPtr StartA, EventPtr EndA, EventPtr StartB, EventPtr EndB);
 
 private:
 	string queryName;

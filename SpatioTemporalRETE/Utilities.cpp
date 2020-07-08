@@ -348,6 +348,12 @@ bool Utilities::tokenizeSingleExp(const string expression, string& stream, strin
 		}
 
 	}
+	else if ((index = left.find("(")) != -1) {
+		int index2 = left.find(")");
+
+		specialOp = expression.substr(0, index);
+		stream = expression.substr(index + 1, left.size() - index - 2);
+	}
 	else {
 		fieldName = left;
 	}

@@ -24,6 +24,10 @@ AlphaNode::AlphaNode(int id_given, string condition) : Node(id_given, condition)
 	Utilities::tokenizeSingleExp(condition, prevNode.first, thisDataType, thisCondition, thisVarLimit, specialOp);
 	if (specialOp != "") {
 		m_spatialOp = new SpatialOp(specialOp);
+		/*if (specialOp != "exist") {
+			m_spatialOp->setVarCondition(thisCondition);
+			m_spatialOp->setVarLimit(thisVarLimit);
+		}*/
 	}
 
 }
@@ -160,7 +164,7 @@ int AlphaNode::justTest(int TimeSlice)
 
 	float limit = atof(thisVarLimit.c_str());
 
-	if (limit == 0) {//its not a integer val
+	if (limit == 0 && m_spatialOp == NULL ) {//its not a integer val
 		int cases = -1;
 		if (thisCondition == "=" || thisCondition == "==")
 			cases = 0;
@@ -184,6 +188,37 @@ int AlphaNode::justTest(int TimeSlice)
 			inputQueue.first.pop();
 			timeSlice_i--;
 		}
+	}
+	else if (limit == 0 && m_spatialOp != NULL) {
+		
+		//copy the event to window
+		//also distinct the anchor --> anchors are all same
+		string tempAnchor = inputQueue.first.front()->getString("anchors");
+		while (!inputQueue.first.empty() && TimeSlice > 0) {
+			EventPtr originalFrontEvent = inputQueue.first.front();
+
+			win->addEvent(originalFrontEvent);
+
+			inputQueue.first.pop();
+		}
+
+		////check time
+		//if (win->getInitTime() + win->getTriggerTime() < win->getHigheststOriginalTime()) {
+		//	win->setInitTime(win->getInitTime() + win->getTriggerTime()); // update the execution time
+		//}
+		//else {
+		//	return 0;
+		//}
+
+		vector<string> objAnchor_s = Utilities::splitDelim(tempAnchor, ",");
+		vector<int> objAnchor_i;
+		for (auto i : objAnchor_s) {
+			objAnchor_i.push_back(atoi(i.c_str()));
+		}
+		objAnchor_i.pop_back();
+		
+		EventResult = m_spatialOp->process(win, objAnchor_i);
+
 	}
 	else {
 		int cases = -1;

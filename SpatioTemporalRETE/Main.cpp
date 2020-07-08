@@ -9,35 +9,6 @@ using namespace std;
 
 queue<EventPtr> generateSamepleLatLong(int number) {
 	
-	//queue<EventPtr> ev;
-	////scenario --> 4 vessel - 2 ally, 2 enemy
-
-	//Event* e;
-	//int time_now = 0;
-	//for (int i = 0; i < number; i++) {
-	//	e = new Event(Utilities::id++, time_now);
-	//	if (i % 4 == 3)
-	//		time_now++;
-
-	//	if (i % 2 == 0) {
-	//		e->addAttr("iff", "ally");
-	//	}
-	//	else {
-	//		e->addAttr("iff", "enemy");
-	//	}
-
-	//	e->addAttr("type", "recon");
-	//	e->addAttr("lon", (float)Utilities::randomFloat(127, 129));
-	//	e->addAttr("lat", (float)Utilities::randomFloat(35, 37));
-	//	float ele = (float)Utilities::randomFloat(0, 10);
-
-	//	e->addAttr("objid", i % 4);
-
-	//	ev.push(EventPtr(e));
-	//}
-
-	//return ev;
-
 	queue<EventPtr> ev;
 	//scenario --> 4 vessel - 2 ally, 2 enemy
 
@@ -125,7 +96,7 @@ int main() {
 			return 0;
 		}
 		case 1: {
-			string temp;
+			string temp, then_detect;
 			vector<string> master_str;
 			cout << "start with IF and finish with THEN" << endl;
 			cin.ignore();
@@ -134,11 +105,12 @@ int main() {
 				break;
 			}
 			else {
-				while (temp.substr(0, 4) != "THEN") {
-					master_str.push_back(temp);
+				master_str.push_back(temp);
 
-					//cin.ignore();
+				while (then_detect != "THEN") {
 					getline(cin, temp);
+					then_detect = temp.substr(0, 4);
+					master_str.push_back(temp);
 				}
 			}
 
@@ -262,10 +234,11 @@ int main() {
 		}
 
 		cout << "select what you want " << endl;
-		cout << "0. manually input the rule " << endl;
-		cout << "1. generate pre defined rule" << endl;
-		cout << "2. generate random event" << endl;
-		cout << "3. run rete" << endl;
+		cout << "0. exit " << endl;
+		cout << "1. manually input the rule " << endl;
+		cout << "2. generate pre defined rule" << endl;
+		cout << "3. generate random event" << endl;
+		cout << "4. run rete" << endl;
 		cin >> select;
 	}
 
