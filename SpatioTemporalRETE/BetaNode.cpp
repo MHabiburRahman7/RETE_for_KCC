@@ -252,7 +252,7 @@ int BetaNode::justTest()
 
 			EventResult.push(leftInputQueue.first.front()); //this add 1
 
-			leftInputQueue.first.pop(); // this also add 2 ???  ._.
+			leftInputQueue.first.pop();
 		}
 	}
 	//Ordered join method
@@ -313,6 +313,8 @@ int BetaNode::justTest()
 
 						Event* e = new Event(Utilities::id++, frontLeftEvent->getInt("time"));
 						e->addAttr(thisProduct, "true");
+						
+						Event* r = e->clone();
 
 						//push to window
 						if (win) {
@@ -320,8 +322,8 @@ int BetaNode::justTest()
 							win->addResultEvent(EventPtr(e));
 						}
 
-						EventResult.push(EventPtr(e));
-
+						EventResult.push(EventPtr(r));
+					
 						left->pop();
 					}
 					if (frontLeftEvent->getInt(key) >= frontRightEvent->getInt(key)) {
@@ -452,7 +454,7 @@ int BetaNode::justTest()
 	
 	if(win != NULL && specialOperation != ""){
 		//Spatial Op
-		EventResult = {};
+		ClearResult();
 		EventResult = thisSpatialOp->process(win, anchorObjId);
 	}
 
@@ -481,7 +483,8 @@ int BetaNode::justTest()
 		}*/
 
 		//EventResult = *local_win;
-		//EventResult = *win->getFinalRes();
+		ClearResult();
+		EventResult = win->getFinalRes();
 		int c = 11;
 	}
 
@@ -504,7 +507,7 @@ int BetaNode::justTest()
 	}
 
 	if (EventResult.size() > 0) {
-		if(listOfNextPair.size() != 0)
+		//if(listOfNextPair.size() != 0)
 			ClearResult();
 		return 1;
 	}
@@ -633,5 +636,9 @@ int BetaNode::ClearResult()
 	while (EventResult.size()> 0) {
 		EventResult.pop();
 	}
+
+	//queue<EventPtr> empty;
+	//swap(EventResult, empty);
+
 	return 1;
 }

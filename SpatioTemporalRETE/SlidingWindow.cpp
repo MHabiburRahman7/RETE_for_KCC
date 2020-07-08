@@ -35,6 +35,21 @@ void SlidingWindow::refreshDouble()
 
 void SlidingWindow::addEvent(EventPtr e)
 {
+	/*
+		Event* ec = e->clone();
+
+	if (win_buffer.size() > 0) {
+	//	std::sort(win_buffer->front(), win_buffer->back());
+		//duplicate check
+		int duplicate = duplicateCheck(EventPtr(ec), win_buffer);
+
+		if(duplicate == 0)
+			win_buffer.push(EventPtr(ec));
+	}
+	else
+		win_buffer.push(EventPtr(ec));
+	*/
+
 	if (win_buffer.size() > 0) {
 	//	std::sort(win_buffer->front(), win_buffer->back());
 		//duplicate check
@@ -51,21 +66,29 @@ void SlidingWindow::addEvent(EventPtr e)
 
 void SlidingWindow::addResultEvent(EventPtr e)
 {
-
-	//Event ev = *e->clone();
+	Event *ev = e->clone();
 	//EventPtr ep;// = Event(ev);
 	//EventPtr(ev);
 	
 	if (win_res_buffer.size() > 0) {
 		//	std::sort(win_buffer->front(), win_buffer->back());
-			//duplicate check
-		int duplicate = duplicateCheck(e, win_res_buffer);
+		
+		//duplicate check
+		Event* backup_event = e->clone();
+		int duplicate = duplicateCheck(EventPtr(ev), win_res_buffer);
 
 		if (duplicate == 0)
-			win_res_buffer.push(e);
+			win_res_buffer.push(EventPtr(backup_event));
+
+
+		//duplicate check
+		//int duplicate = duplicateCheck(e, win_res_buffer);
+
+		//if (duplicate == 0)
+		//	win_res_buffer.push(e);
 	}
 	else
-		win_res_buffer.push(e);
+		win_res_buffer.push(EventPtr(ev));
 
 	refresh(win_res_buffer);
 }
@@ -138,6 +161,11 @@ float SlidingWindow::setInitTime(float newTime)
 {
 	initTime = newTime;
 	return 1;
+}
+
+int SlidingWindow::getTriggerTime()
+{
+	return winStep;
 }
 
 queue<pair<EventPtr, EventPtr>> SlidingWindow::getDoubleRes()

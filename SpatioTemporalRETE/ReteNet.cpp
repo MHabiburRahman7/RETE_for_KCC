@@ -10,6 +10,8 @@ vector<Node*> ReteNet::NodeList;
 //this is spatio temporal
 vector<Node*> ReteNet::nodewithspatialIndexing;
 vector<pair<pair<string, string>, int>> ReteNet::vec_anchor_id;
+unordered_map<string, vector<string>> ReteNet::anchor_stab_map;
+vector<string> ReteNet::observed_obj_dict;
 
 vector<vector<pair<string, string>>> ReteNet::parseConditionOriginal(vector<string> condList)
 {
@@ -41,9 +43,15 @@ vector<vector<pair<string, string>>> ReteNet::parseConditionOriginal(vector<stri
 			tokenizeMultiExpCEP(value, SingleExpressionMade);
 		}
 		else if ("window" == clause) {//Window length=, sliding=
-			SingleExpressionMade.push_back({"window", value});
+			
+			vector<string> temp_string = Utilities::splitDelim(value, ",");
+
+			for (int i = 0; i < temp_string.size(); i++) {
+				vector<string> another_string = Utilities::splitDelim(temp_string[i], "=");
+				SingleExpressionMade.push_back({ another_string[0],another_string[1] });
+			}
 		}
-		else if ("then" == clause) {//Window length=, sliding=
+		else if ("then" == clause) {//then = 
 			SingleExpressionMade.push_back({ "term", value });
 		}
 
@@ -229,12 +237,15 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 		else { // can be window or then clause
 			
 			//Keep the window val
-			if (exp_vec[i][0].first == "window") {
+			if (exp_vec[i][0].first == "range") {
 				int index, index1;
-				index = exp_vec[i][0].second.find("range");
-				index1 = exp_vec[i][0].second.find("step");
+				//index = exp_vec[i][0].second.find("range");
+				//index1 = exp_vec[i][0].second.find("trigger");
 
-				range = atoi(exp_vec[i][0].second.substr(index + 6, exp_vec[i][0].second.size() - index -6).c_str());
+				//range = atoi(exp_vec[i][0].second.substr(index + 6, exp_vec[i][0].second.size() - index -6).c_str());
+
+				range = atoi(exp_vec[i][0].second.c_str());
+				step = atoi(exp_vec[i][1].second.c_str());
 
 			}
 			else if (exp_vec[i][0].first == "term") {
@@ -457,6 +468,34 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 	//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
 	RTree<int, float, 2, float> tree; // this one responsible for spatial node indexing
 
+	RTree<int, float, 3, float> Full3dTree; // lat, long, anchor_enum
+
+	//enum dictionaries --> well it is based on the hash map then
+	for (int j = 0; j < vec_anchor_id.size(); j++) {
+		if (anchor_stab_map.find(vec_anchor_id[j].first.first) != anchor_stab_map.end()) // check based on the dictionaries
+		{
+			//get current event's position
+			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
+
+			for (; anchorEventQueue.size() > 0;) {
+
+				float xpos[2], ypos[2];
+
+				//just initiated
+				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
+				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+
+				tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+
+				anchorEventQueue.pop();
+			}
+		}
+	}
+
 	//lets try to process the ally first --> 2 ally 2 enemy --> these event happened at time t
 	//onetime event contain 2 ally & 2 enemy respectively
 	for (int j = 0; j < vec_anchor_id.size(); j++) {
@@ -635,12 +674,46 @@ void ReteNet::buildNetNode()
 
 	//spatio temporal node addressing
 	for (int i = 0; i < betaListIDDictionary.size(); i++) {
-		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() != "") {
+		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() == "distance") {
 			nodewithspatialIndexing.push_back(NodeList[betaListIDDictionary[i]]);
 			vec_anchor_id.push_back({ {static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getRightConnName()}, NodeList[betaListIDDictionary[i]]->getID() });
 		}
 	}
-	int a = 12;
+
+	//address the anchor and stabber
+	//format = anchor -- desired stabber
+	for (int i = 0; i < nodewithspatialIndexing.size(); i++) {
+		//not exist
+		if (anchor_stab_map.find(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()) == anchor_stab_map.end()) {
+			vector<string> temp;
+			temp.push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName());
+			anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()] = temp;
+		}
+		else {
+			//duplicate check
+			bool duplicate = false;
+			for (auto a : anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()]) {
+				if (static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName() == a) {
+					duplicate = true;
+				}
+			}
+			if (!duplicate) {
+				anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName());
+			}
+		}
+	}
+	
+	//build enum dictionary
+	for (auto au : anchor_stab_map) {
+		for (auto sec : au.second) {
+			observed_obj_dict.push_back(sec);
+		}
+	}
+	//disctitize the observed_obj enumeration
+	sort(observed_obj_dict.begin(), observed_obj_dict.end());
+	observed_obj_dict.erase(unique(observed_obj_dict.begin(), observed_obj_dict.end()), observed_obj_dict.end());
+
+	//int a = 10;
 }
 
 Node* ReteNet::findNode(string expression, int nodeType)

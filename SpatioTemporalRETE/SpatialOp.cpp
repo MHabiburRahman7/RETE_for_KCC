@@ -20,8 +20,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	queue<EventPtr> final_res;
 
 	//it will execute the query after 
-	if (win->getInitTime() + triggTime < win->getHigheststOriginalTime()) {
-		win->setInitTime(win->getInitTime() + triggTime);
+	if (win->getInitTime() + win->getTriggerTime() < win->getHigheststOriginalTime()) {
+		win->setInitTime(win->getInitTime() + win->getTriggerTime()); // update the execution time
 	}
 	else {
 		//if it is not the time, it will return null
@@ -139,8 +139,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 
 						//the not the beginning
 						if (hash_latestUpdate[validAnchor].first != 0 && hash_latestUpdate[validAnchor].second != 0) {
-							tempAnchor = new Rect(hash_latestUpdate[validAnchor].first - (atoi(varLimit.c_str()) / 2), hash_latestUpdate[validAnchor].second - (atoi(varLimit.c_str()) / 2)
-								, hash_latestUpdate[validAnchor].first + (atoi(varLimit.c_str()) / 2), hash_latestUpdate[validAnchor].second + (atoi(varLimit.c_str()) / 2));
+							tempAnchor = new Rect(hash_latestUpdate[validAnchor].first - (atof(varLimit.c_str()) / 2), hash_latestUpdate[validAnchor].second - (atof(varLimit.c_str()) / 2)
+								, hash_latestUpdate[validAnchor].first + (atof(varLimit.c_str()) / 2), hash_latestUpdate[validAnchor].second + (atof(varLimit.c_str()) / 2));
 
 							//delete the previous
 							tree.Remove(tempAnchor->min, tempAnchor->max, oneTimeEvent.front()->getInt("objid"));
@@ -152,8 +152,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 							hash_needUpdate[validAnchor] = false;
 						}
 
-						tempAnchor = new Rect(oneTimeEvent.front()->getFloat("lat") - (atoi(varLimit.c_str()) / 2), oneTimeEvent.front()->getFloat("lon") - (atoi(varLimit.c_str()) / 2)
-							, oneTimeEvent.front()->getFloat("lat") + (atoi(varLimit.c_str()) / 2), oneTimeEvent.front()->getFloat("lon") + (atoi(varLimit.c_str()) / 2));
+						tempAnchor = new Rect(oneTimeEvent.front()->getFloat("lat") - (atof(varLimit.c_str()) / 2), oneTimeEvent.front()->getFloat("lon") - (atof(varLimit.c_str()) / 2)
+							, oneTimeEvent.front()->getFloat("lat") + (atof(varLimit.c_str()) / 2), oneTimeEvent.front()->getFloat("lon") + (atof(varLimit.c_str()) / 2));
 
 						//insert the new one
 						tree.Insert(tempAnchor->min, tempAnchor->max, oneTimeEvent.front()->getInt("objid"));
@@ -203,8 +203,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 
 		//------------------------------------------------------------------------------
 		//querry time -------
-
-		win->addResultEvent(final_res.back());
+		if(final_res.size() > 0)
+			win->addResultEvent(final_res.back());
 
 		//------------------------------------------------------------------------------
 
@@ -271,6 +271,12 @@ EventPtr SpatialOp::calculate(EventPtr a, EventPtr b)
 
 void SpatialOp::setVarLimit(string limit)
 {
+	//because it is latitude and longitude, so 0.1 lat or long equal with 10 km
+	/*float temp;
+	temp = atof(limit.c_str());
+	temp /= 100;
+	varLimit = to_string(temp);*/
+	
 	varLimit = limit;
 }
 

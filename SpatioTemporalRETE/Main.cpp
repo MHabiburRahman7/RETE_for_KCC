@@ -110,17 +110,41 @@ int main() {
 	queue<EventPtr> tempWM;
 
 	cout << "select what you want " << endl;
+	cout << "0. manually input the rule " << endl;
+	cout << "1. generate pre defined rule" << endl;
+	cout << "2. generate random event" << endl;
+	cout << "3. run rete" << endl;
 	cin >> select;
 	while (select <= 20) {
 		switch (select) {
-		case 1: {
-			
-			//Test R-Tree
+			cin.ignore();
+		case 0: {
+			string temp;
+			vector<string> master_str;
+			cout << "start with IF and finish with THEN" << endl;
+			cin.ignore();
+			getline(cin, temp);
+			if (temp.substr(0, 2) != "IF") {
+				break;
+			}
+			else {
+				while (temp.substr(0, 4) != "THEN") {
+					master_str.push_back(temp);
 
+					//cin.ignore();
+					getline(cin, temp);
+				}
+			}
 
+			vector<vector<pair<string, string>>> colMade;
+			colMade = ReteNet::parseConditionOriginal(master_str);
+
+			ReteNet::growTheNodes(colMade);
 
 			break;
-		}case 2:{
+		}
+		case 1: {
+
 			cout << "Rules for checking distance" << endl;
 
 			//BASIC IF ELSE
@@ -141,18 +165,18 @@ int main() {
 			colMade = ReteNet::parseConditionOriginal(made);
 
 			cout << endl << "IF speed>3 & elevation<10 & iff=enemy" << endl;
-			cout <<"THEN enemyvessel" << endl;
+			cout << "THEN enemyvessel" << endl;
 
 			ReteNet::growTheNodes(colMade);
 
 			//SPATIAL IF ELSE
 			made = {};
 			made.push_back("IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon");
-			made.push_back("WINDOW range=5");
+			made.push_back("WINDOW range=5, trigger=5");
 			made.push_back("THEN navalthreat");
 
 			cout << endl << "IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon" << endl;
-			cout << "WINDOW range=5" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
 			cout << "THEN enemyvessel" << endl;
 
 			colMade = ReteNet::parseConditionOriginal(made);
@@ -162,11 +186,11 @@ int main() {
 			//Now Exist
 			made = {};
 			made.push_back("IF exist(navalthreat)");
-			made.push_back("WINDOW range=10");
+			made.push_back("WINDOW range=10, trigger=10");
 			made.push_back("THEN navalresponse");
 
 			cout << endl << "IF exist(navalthreat)" << endl;
-			cout << "WINDOW range=10" << endl;
+			cout << "WINDOW range=10, trigger=10" << endl;
 			cout << "THEN navalresponse" << endl;
 
 			colMade = ReteNet::parseConditionOriginal(made);
@@ -175,12 +199,22 @@ int main() {
 
 			ReteNet::buildNetNode();
 
-			cout << endl;
-			cout << "Generate WM EVENTS" << endl;
-			//tempWM = generateSample(1000);
-			tempWM = generateSamepleLatLong(1000);
+			break;
+		}case 2: {
 
-			cout <<endl<< "Execute RETE" << endl;
+			cout << endl;
+			cout << "Generate WM EVENTS" << endl << endl;
+			cout << "Enter the number of events : " << endl;
+			int n;
+			cin >> n;
+			tempWM = generateSamepleLatLong(n);
+
+			break;
+		}case 3: {
+
+			ReteNet::buildNetNode();
+
+			cout << endl << "Execute RETE" << endl << endl;
 
 			while (tempWM.size() > 0) {
 
@@ -215,43 +249,17 @@ int main() {
 				//now the spatio temporal thing
 				ReteNet::SpatioTemporalExecution(100);
 
-
-				tempWM.pop();
+				//tempWM.pop();
 			}
-
-			break;
-		}case 3: {
-
-			// hmmm, i doubt it :"
-
-			cout << "Rules for new rete" << endl;
-
-			//BASIC IF ELSE
-			vector<string> made;
-			made.push_back("IF speed>3 & elevation<10 & iff=ally");
-			made.push_back("THEN allyvessel");
-			vector<vector<pair<string, string>>> colMade;
-			colMade = ReteNet::parseConditionOriginal(made);
-
-			ReteNet::growTheNodes(colMade);
-
-			made = {};
-			made.push_back("IF speed>3 & elevation<10 & iff=enemy");
-			made.push_back("THEN enemyvessel");
-			colMade = ReteNet::parseConditionOriginal(made);
-
-			ReteNet::growTheNodes(colMade);
-			break;
-		}case 4: {
-			
-			break;
-		}case 5: {
-			
 			break;
 		}
 		}
 
 		cout << "select what you want " << endl;
+		cout << "0. manually input the rule " << endl;
+		cout << "1. generate pre defined rule" << endl;
+		cout << "2. generate random event" << endl;
+		cout << "3. run rete" << endl;
 		cin >> select;
 	}
 

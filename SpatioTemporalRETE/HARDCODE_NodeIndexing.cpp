@@ -432,7 +432,7 @@ int main() {
 	queue<EventPtr> wm = generateSamepleLatLong(1000);
 
 	int event_count = 0;
-	while (wm.size() > 900) {
+	while (wm.size() > 10) {
 		
 		int currTime = wm.front()->getInt("time");
 

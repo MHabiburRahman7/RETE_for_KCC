@@ -23,6 +23,7 @@ public:
 	float getHigheststOriginalTime();
 	float getInitTime();
 	float setInitTime(float newTime);
+	int getTriggerTime();
 	queue<pair<EventPtr, EventPtr>> getDoubleRes();
 
 private:

@@ -87,6 +87,9 @@ private:
 	//long long nextTime = -1;
 	SlidingWindow* win;
 
+	//MISCS
+	queue<Event> createdEvent;
+
 	//Spatial Operator
 	SpatialOp* thisSpatialOp;
 

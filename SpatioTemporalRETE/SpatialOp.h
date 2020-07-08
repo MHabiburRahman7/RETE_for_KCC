@@ -50,8 +50,7 @@ private:
 	string varCondition;
 
 	string triggerType;
-	float triggTime = 3;
-	bool triggerred;
+	float triggTime;
 	//Event tempEvent;
 
 	vector <int> anchorObjList;
