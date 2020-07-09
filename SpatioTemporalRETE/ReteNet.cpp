@@ -8,7 +8,8 @@ vector<int>ReteNet::termListIDDictionary;
 vector<Node*> ReteNet::NodeList;
 
 //this is spatio temporal
-vector<Node*> ReteNet::nodewithspatialIndexing;
+vector<Node*> ReteNet::nodewithspatialCondition;
+vector<Node*> ReteNet::distanceNode;
 vector<pair<pair<string, string>, int>> ReteNet::vec_anchor_id;
 unordered_map<string, vector<string>> ReteNet::anchor_stab_map;
 vector<string> ReteNet::observed_obj_dict;
@@ -597,7 +598,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 		if (anchor_stab_map.find(vec_anchor_id[j].first.first) != anchor_stab_map.end()) // check based on the dictionaries
 		{
 			//get current event's position
-			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getLeftInput();
+			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(distanceNode[j])->getLeftInput();
 
 			for (; anchorEventQueue.size() > 0;) {
 
@@ -605,19 +606,19 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 
 				//just initiated
 				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
-				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
+				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
 
-				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
-				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(nodewithspatialIndexing[j])->getSpatialLimFloat() / 2);
+				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
+				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
 
 				//3rd dimension is the enum
-				vector<int> corresponding_dimension = findCorrespondingAnchor(static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightConnName(), observed_obj_dict);
+				vector<int> corresponding_dimension = findCorrespondingAnchor(static_cast<BetaNode*>(distanceNode[j])->getRightConnName(), observed_obj_dict);
 				for (int k = 0; k < corresponding_dimension.size(); k++) {
 					xpos[2] = corresponding_dimension[k];
 					ypos[2] = corresponding_dimension[k];
 
-					tree.Insert(xpos, ypos, nodewithspatialIndexing[j]->getID());
+					tree.Insert(xpos, ypos, distanceNode[j]->getID());
 				}
 
 				anchorEventQueue.pop();
@@ -647,7 +648,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 		int dist = distance(observed_obj_dict.begin(), it);
 		
 		//assign to each observed index
-		queue<EventPtr> testEventQueue = static_cast<BetaNode*>(nodewithspatialIndexing[j])->getRightInput();
+		queue<EventPtr> testEventQueue = static_cast<BetaNode*>(distanceNode[j])->getRightInput();
 		for (; testEventQueue.size() > 0; testEventQueue.pop()) {
 
 			organizedTestEvents[dist].push_back(testEventQueue.front());
@@ -660,7 +661,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 		//empty the node
 		// it have to be the right one ._.
 		queue<EventPtr> ept = {};
-		static_cast<BetaNode*>(nodewithspatialIndexing[j])->ClearInputQueue(false);
+		static_cast<BetaNode*>(distanceNode[j])->ClearInputQueue(false);
 	}
 	
 	//------------------------------------------------------------------------------------------------
@@ -700,6 +701,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 
 #pragma endregion	
 
+#pragma region OriginalRETE_BFS
 	while (!pushedNode.empty()) {
 		//Maybe this is the indexing?
 		int testStatus = pushedNode[0]->testNode(10);
@@ -726,6 +728,11 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 
 		pushedNode.erase(pushedNode.begin());
 	}
+#pragma endregion
+
+#pragma region priorityqueue_style
+
+#pragma endregion
 
 	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
 	tree.RemoveAll();
@@ -800,23 +807,37 @@ void ReteNet::buildNetNode()
 			continue;
 	}
 
-	//spatio temporal node addressing
+	//mbr node addressing
 	for (int i = 0; i < betaListIDDictionary.size(); i++) {
 		if (static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getSpecialOpName() == "distance") {
-			nodewithspatialIndexing.push_back(NodeList[betaListIDDictionary[i]]);
+			distanceNode.push_back(NodeList[betaListIDDictionary[i]]);
 			vec_anchor_id.push_back({ {static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getLeftConnName(), static_cast<BetaNode*>(NodeList[betaListIDDictionary[i]])->getRightConnName()}, NodeList[betaListIDDictionary[i]]->getID() });
 		}
 	}
-	//discritize vec_anchor_id & node w/ spatial indexing
+	//discritize vec_anchor_id & mbr node
 	sort(vec_anchor_id.begin(), vec_anchor_id.end());
 	vec_anchor_id.erase(unique(vec_anchor_id.begin(), vec_anchor_id.end()), vec_anchor_id.end());
-	sort(nodewithspatialIndexing.begin(), nodewithspatialIndexing.end());
-	nodewithspatialIndexing.erase(unique(nodewithspatialIndexing.begin(), nodewithspatialIndexing.end()), nodewithspatialIndexing.end());
+	sort(distanceNode.begin(), distanceNode.end());
+	distanceNode.erase(unique(distanceNode.begin(), distanceNode.end()), distanceNode.end());
+
+	////Addressing Node with spatio temporal condition
+	//for (int i = 0; i < NodeList.size(); i++) {
+	//	if (static_cast<BetaNode*>(NodeList[i])->getSpecialOpName() != "") {
+	//		nodewithspatialCondition.push_back(NodeList[i]);
+	//	}
+	//}
+	////node w/ spatial indexing
+	//sort(nodewithspatialCondition.begin(), nodewithspatialCondition.end());
+	//nodewithspatialCondition.erase(unique(nodewithspatialCondition.begin(), nodewithspatialCondition.end()), nodewithspatialCondition.end());
+	////push into priority queue
+	//for (auto n : nodewithspatialCondition) {
+	//	//p_queue.push(*n);
+	//}
 
 
 	//address the anchor and stabber
 	//format = anchor -- desired stabber
-	for (int i = 0; i < nodewithspatialIndexing.size(); i++) {
+	for (int i = 0; i < distanceNode.size(); i++) {
 
 		/*
 		anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName());
@@ -827,21 +848,21 @@ void ReteNet::buildNetNode()
 		*/
 
 		//not exist
-		if (anchor_stab_map.find(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()) == anchor_stab_map.end()) {
+		if (anchor_stab_map.find(static_cast<BetaNode*>(distanceNode[i])->getLeftConnName()) == anchor_stab_map.end()) {
 			vector<string> temp;
-			temp.push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName());
-			anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()] = temp;
+			temp.push_back(static_cast<BetaNode*>(distanceNode[i])->getRightConnName());
+			anchor_stab_map[static_cast<BetaNode*>(distanceNode[i])->getLeftConnName()] = temp;
 		}
 		else {
 			//duplicate check
 			bool duplicate = false;
-			for (auto a : anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()]) {
-				if (static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName() == a) {
+			for (auto a : anchor_stab_map[static_cast<BetaNode*>(distanceNode[i])->getLeftConnName()]) {
+				if (static_cast<BetaNode*>(distanceNode[i])->getRightConnName() == a) {
 					duplicate = true;
 				}
 			}
 			if (!duplicate) {
-				anchor_stab_map[static_cast<BetaNode*>(nodewithspatialIndexing[i])->getLeftConnName()].push_back(static_cast<BetaNode*>(nodewithspatialIndexing[i])->getRightConnName());
+				anchor_stab_map[static_cast<BetaNode*>(distanceNode[i])->getLeftConnName()].push_back(static_cast<BetaNode*>(distanceNode[i])->getRightConnName());
 			}
 		}
 	}

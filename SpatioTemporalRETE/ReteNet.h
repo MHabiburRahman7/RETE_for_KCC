@@ -38,14 +38,6 @@ public:
 
 	//About Spatiotemporal special handling
 	static void SpatioTemporalExecution(int TimeSlice);
-	//filter the spatial node that we can do indexing
-	static vector<Node*> nodewithspatialIndexing;
-	//list the anchor class
-	//vector format --> left input, right input, node id
-	static vector<pair<pair<string, string>, int>> vec_anchor_id;
-	//map format --> anchor, vector of corresponding obj type
-	static unordered_map<string, vector<string>> anchor_stab_map;
-	static vector<string> observed_obj_dict;
 
 	//priority queue for different temporal execution
 	bool Compare_pq(Node* a, Node* b) {
@@ -59,5 +51,14 @@ private:
 	static vector<int>betaListIDDictionary;
 	static vector<int>termListIDDictionary;
 	static vector<Node*> NodeList;
+
+	//filter the spatial node that we can do indexing
+	static vector<Node*> nodewithspatialCondition, distanceNode;
+	//list the anchor class
+	//vector format --> left input, right input, node id
+	static vector<pair<pair<string, string>, int>> vec_anchor_id;
+	//map format --> anchor, vector of corresponding obj type
+	static unordered_map<string, vector<string>> anchor_stab_map;
+	static vector<string> observed_obj_dict;
 };
 

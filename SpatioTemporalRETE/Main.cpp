@@ -96,9 +96,18 @@ int main() {
 			return 0;
 		}
 		case 1: {
+			system("cls");
 			string temp, then_detect;
 			vector<string> master_str;
-			cout << "start with IF and finish with THEN" << endl;
+			cout << "start with IF and finish with THEN" << endl <<endl;
+			cout << "example:" << endl;
+			cout << "IF speed > 10 & elevation > 10 & iff=ally" << endl;
+			cout << "THEN allyaircraft" << endl <<endl<< "or" <<endl<<endl;
+			cout << "IF distance(allyaircraft, enemyvessel) < 10 & allyaircraft.type=recon" << endl;
+			cout << "WINDOW range=5, trig=5" << endl;
+			cout << "THEN airthreatdetected" << endl << endl;
+			cout << "your input:" << endl;
+
 			cin.ignore();
 			getline(cin, temp);
 			if (temp.substr(0, 2) != "IF") {
@@ -108,6 +117,7 @@ int main() {
 				master_str.push_back(temp);
 
 				while (then_detect != "THEN") {
+					//cin.ignore();
 					getline(cin, temp);
 					then_detect = temp.substr(0, 4);
 					master_str.push_back(temp);
@@ -122,7 +132,7 @@ int main() {
 			break;
 		}
 		case 2: {
-
+			system("cls");
 			cout << "Rules for checking distance" << endl;
 
 			//BASIC IF ELSE
@@ -177,9 +187,10 @@ int main() {
 
 			ReteNet::buildNetNode();
 
+			system("pause");
 			break;
 		}case 3: {
-
+			system("cls");
 			cout << endl;
 			cout << "Generate WM EVENTS" << endl << endl;
 			cout << "Enter the number of events : " << endl;
@@ -189,7 +200,7 @@ int main() {
 
 			break;
 		}case 4: {
-
+			system("cls");
 			ReteNet::buildNetNode();
 
 			cout << endl << "Execute RETE" << endl << endl;
@@ -228,11 +239,15 @@ int main() {
 				ReteNet::SpatioTemporalExecution(100);
 
 				//tempWM.pop();
+				
 			}
+
+			system("pause");
 			break;
 		}
 		}
 
+		system("cls");
 		cout << "select what you want " << endl;
 		cout << "0. exit " << endl;
 		cout << "1. manually input the rule " << endl;
