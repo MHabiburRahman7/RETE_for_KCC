@@ -13,8 +13,10 @@ vector<pair<pair<string, string>, int>> ReteNet::vec_anchor_id;
 unordered_map<string, vector<string>> ReteNet::anchor_stab_map;
 vector<string> ReteNet::observed_obj_dict;
 
+priority_queue < Node, vector<Node>, decltype(&ReteNet::Compare_pq)> p_queue;
+
 vector<vector<pair<string, string>>> ReteNet::parseConditionOriginal(vector<string> condList)
-{
+{	
 	//Parsing parsing~
 	vector<vector<pair<string, string>>> collectedMade;
 	vector<string> newInputForm;

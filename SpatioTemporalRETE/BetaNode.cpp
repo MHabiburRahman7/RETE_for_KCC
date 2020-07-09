@@ -594,6 +594,14 @@ void BetaNode::refreshEvent(queue<EventPtr>& inputEvent) {
 	}*/
 }
 
+int BetaNode::getExecutionEstimated()
+{
+	if (win == NULL)
+		return -1;
+	else 
+		return win->getInitTime();
+}
+
 void BetaNode::pushResult(queue<EventPtr> result, Node* source)
 {
 	//queue<EventPtr> dummy_res = *result;

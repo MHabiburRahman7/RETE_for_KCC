@@ -110,6 +110,14 @@ void AlphaNode::setWindow(int len, int step)
 	win = new SlidingWindow(len, step);
 }
 
+int AlphaNode::getExecutionEstimated()
+{
+	if (win == NULL)
+		return -1;
+	else
+		return win->getInitTime();
+}
+
 int AlphaNode::checkExistPair(Node* pairs)
 {
 	for (int i = 0; i < listOfNextPair.size(); i++) {

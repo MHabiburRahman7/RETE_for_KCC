@@ -62,6 +62,7 @@ public:
 
 	//Sliding Window
 	void setWindow(int len = -1, int step = -1);
+	int getExecutionEstimated();
 
 private:
 	//int id;

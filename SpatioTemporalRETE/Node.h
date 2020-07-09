@@ -30,6 +30,9 @@ public:
 	virtual int testNode(int TimeSlice) = 0;
 
 	virtual queue<EventPtr> getEvRes() = 0;
+	
+	//Window thing
+	virtual int getExecutionEstimated() = 0;
 
 	string justCondition;
 };

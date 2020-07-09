@@ -66,6 +66,7 @@ public:
 
 	//WINDOW PART
 	void refreshEvent(queue<EventPtr>& inputEvent);
+	int getExecutionEstimated();
 
 private:
 	//int id;
