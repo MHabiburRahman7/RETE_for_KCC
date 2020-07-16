@@ -559,6 +559,7 @@ int BetaNode::justTest()
 			cout << *local_ptr.front() << endl;
 			local_ptr.pop();
 		}
+		cout << endl;
 	}
 
 	if (EventResult.size() > 0) {
