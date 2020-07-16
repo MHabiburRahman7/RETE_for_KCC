@@ -96,7 +96,7 @@ int SlidingWindow::duplicateCheck(EventPtr a, queue<EventPtr> eventRes)
 {
 	queue<EventPtr> tempQueue = eventRes;
 	for (; tempQueue.size() > 0; tempQueue.pop()) {
-		if (a == tempQueue.front())
+		if (a->getId() == tempQueue.front()->getId())
 			return 1;
 	}
 	return 0;

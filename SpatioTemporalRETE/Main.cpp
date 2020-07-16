@@ -61,11 +61,11 @@ queue<EventPtr> generateSample(int number) {
 		}
 
 		e->addAttr("type", "recon");
-		e->addAttr("speed", (float)Utilities::randomFloat(3, 10));
+		e->addAttr("speed", (float)Utilities::randomFloat(3, 20));
 		e->addAttr("lon", (float)Utilities::randomFloat(127, 135));
 		e->addAttr("lat", (float)Utilities::randomFloat(35, 44));
 		//e->addAttr("dir", (float)Utilities::randomFloat(0, 360));
-		float ele = (float)Utilities::randomFloat(0, 10);
+		float ele = (float)Utilities::randomFloat(0, 20);
 		e->addAttr("elevation", ele);
 
 		e->addAttr("objid", i % 4);
@@ -104,7 +104,7 @@ int main() {
 			cout << "IF speed > 10 & elevation > 10 & iff=ally" << endl;
 			cout << "THEN allyaircraft" << endl <<endl<< "or" <<endl<<endl;
 			cout << "IF distance(allyaircraft, enemyvessel) < 10 & allyaircraft.type=recon" << endl;
-			cout << "WINDOW range=5, trig=5" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
 			cout << "THEN airthreatdetected" << endl << endl;
 			cout << "your input:" << endl;
 
@@ -184,8 +184,6 @@ int main() {
 			colMade = ReteNet::parseConditionOriginal(made);
 
 			ReteNet::growTheNodes(colMade);
-
-			ReteNet::buildNetNode();
 
 			system("pause");
 			break;
