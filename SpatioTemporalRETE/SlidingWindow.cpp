@@ -14,8 +14,8 @@ void SlidingWindow::refresh(queue<EventPtr>& eventRes)
 	if (eventRes.front()->map_size() > 999999 || eventRes.front()->map_size() < -1) {
 		eventRes.pop();
 	}
-	int a = 11;
-	while (!eventRes.empty() && eventRes.front()->getInt("time") < latest_time - winLen) {
+	//int a = 11;
+	while (!eventRes.empty() && eventRes.front()->getInt("time") <= latest_time - winLen) {
 		eventRes.pop();
 	}
 
@@ -115,7 +115,7 @@ int SlidingWindow::duplicateCheck(EventPtr a, EventPtr b)
 
 queue<EventPtr> SlidingWindow::getFinalRes()
 {
-	//refresh(win_res_buffer);
+	refresh(win_res_buffer);
 
 	//for(;win_res_buffer.size() > 0; )
 
