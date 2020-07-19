@@ -99,6 +99,18 @@ int main() {
 			system("cls");
 			string temp, then_detect;
 			vector<string> master_str;
+			cout << "there are 9 attributes in each event, those are:" << endl;
+			cout << "1. event id -> already fixed from system" << endl;
+			cout << "2. time --> generated new time (seconds) each 4 events" << endl;
+			cout << "3. iff --> contain ('ally', 'enemy')" << endl;
+			cout << "4. type --> represent object type, only contain ('recon')" << endl;
+			cout << "5. lon --> represent longitude or x axis, random range (127, 135)" << endl;
+			cout << "6. lat --> represent latitude or y axis, random range (35, 44)" << endl;
+			cout << "7. elevation --> repesent object elevation, random range (0,20)" << endl;
+			cout << "8. objid --> represent object id, distributed evenly from 0 until 3" << endl<<endl;
+
+			cout << "distance is calculated by: object_latitude - (latitude/2), object_latitude + (latitude/2), object_longitude - (longitude/2), object_longitude + (longitude/2) ---" << endl << endl;
+
 			cout << "start with IF and finish with THEN" << endl << endl;
 			cout << "example:" << endl;
 			cout << "IF speed > 10 & elevation > 10 & iff=ally" << endl;
