@@ -4,6 +4,7 @@ SlidingWindow::SlidingWindow(int len, int step)
 {
 	winLen = len;
 	winStep = step;//think later
+	initTime = step;
 }
 
 void SlidingWindow::refresh(queue<EventPtr>& eventRes)

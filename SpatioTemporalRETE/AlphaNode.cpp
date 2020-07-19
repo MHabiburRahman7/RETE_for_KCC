@@ -167,6 +167,10 @@ void AlphaNode::testAlphaAndPush(queue<EventPtr>* DirectInputQueue, int TimeSlic
 int AlphaNode::justTest(int TimeSlice)
 {
 	if (inputQueue.first.empty()) {
+		//even it is empty, but the time still updated
+		if(win)
+			win->setInitTime(win->getInitTime() + win->getTriggerTime());
+
 		return 0;
 	}
 

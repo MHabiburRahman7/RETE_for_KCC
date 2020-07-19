@@ -241,8 +241,13 @@ int BetaNode::justTest()
 	//idk why but only left that is working
 	if (leftSourcePair.second == rightSourcePair.second) {
 
-		if (leftInputQueue.first.empty())
+		if (leftInputQueue.first.empty()) {
+			//even it is empty, but the time still updated
+			if(win)
+				win->setInitTime(win->getInitTime() + win->getTriggerTime());
+			
 			return 0;
+		}
 
 		while (1) {
 			if (leftInputQueue.first.size() == 0)
@@ -263,8 +268,13 @@ int BetaNode::justTest()
 	//Ordered join method
 	else if (Utilities::ToUpper(thisCondition) == "AND" || specialOperation != "") {// if it is and or some specialOperation thing
 
-		if (leftInputQueue.first.size() == 0 || rightInputQueue.first.size() == 0)
+		if (leftInputQueue.first.size() == 0 || rightInputQueue.first.size() == 0) {
+			//even it is empty, but the time still updated
+			if(win)
+				win->setInitTime(win->getInitTime()+ win->getTriggerTime());
+
 			return 0;
+		}
 
 		//special case for time --> so far we make this system is executed each time ticks. Meaning all input from left or right 
 		//is already at the same time
@@ -639,11 +649,9 @@ int BetaNode::testNode(int TimeSlice)
 		return justTest();
 	}
 
+	if (win)
+		win->setInitTime(win->getInitTime() + win->getTriggerTime());
 	return 0;
-	//if (win) {
-	//	for(int )
-	//	win->addEvent
-	//}
 }
 
 //int BetaNode::getID()

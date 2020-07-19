@@ -14,7 +14,9 @@ vector<pair<pair<string, string>, int>> ReteNet::vec_anchor_id;
 unordered_map<string, vector<string>> ReteNet::anchor_stab_map;
 vector<string> ReteNet::observed_obj_dict;
 
-priority_queue < Node, vector<Node>, decltype(&ReteNet::Compare_pq)> p_queue;
+//priority_queue < Node*, vector<Node*>, decltype(&ReteNet::Compare_pq)> p_queue;
+priority_queue < Node*, vector<Node*>, ReteNet::CustomCompare> ReteNet::p_queue;
+priority_queue < Node*, vector<Node*>, ReteNet::CustomCompare> ReteNet::temp_p_queue;
 
 vector<vector<pair<string, string>>> ReteNet::parseConditionOriginal(vector<string> condList)
 {	
@@ -213,7 +215,7 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 	vector<Node*> created_node;
 	vector<pair<Node*, string>> compiled_expression;
 	vector<string> joinExpression, BetaExpression;
-
+	
 	Node* tempNode;
 	int range = -1, step = -1;
 	for (int i = 0; i < exp_vec.size(); i++) {
@@ -392,6 +394,9 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 			}
 		}
 	}
+
+	printAllNodes();
+
 	int a = 11;
 	//End of function
 }
@@ -443,7 +448,7 @@ void ReteNet::ExecuteRete(int TimeSlice)
 		//This is the borderline ----------------------------------------------------------------------------
 		//let the spatial rule processed outside
 		if (dynamic_cast<BetaNode*>(pushedNode[0])) {
-			if (dynamic_cast<BetaNode*>(pushedNode[0])->getSpecialOpName() != "") {
+			if (dynamic_cast<BetaNode*>(pushedNode[0])->getSpecialOpName() != "" || pushedNode[0]->getExecutionEstimated() > 0) {
 				pushedNode.erase(pushedNode.begin());
 				continue;
 			}
@@ -505,7 +510,7 @@ vector<int> findCorrespondingAnchor(string objType, vector<string> dictionary) {
 	return result;
 }
 
-void ReteNet::SpatioTemporalExecution(int TimeSlice)
+void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 {
 	//RTree<int, float, 4, float> tree_scalar; // this one responsible for scalar node indexing --> later
 
@@ -588,7 +593,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 //	}
 //
 //#pragma endregion
-
+	
 #pragma region 3DimRegion
 	RTree<int, float, 3, float> tree; // lat, long, anchor_enum
 	//enum dictionaries --> well it is based on the hash map then
@@ -701,6 +706,25 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 
 #pragma endregion	
 
+#pragma region Execute based on priority queue
+
+	bool isExecuting = false;
+	while (p_queue.top()->getExecutionEstimated() == TimeNow) {
+		Node* temp = p_queue.top();
+		p_queue.pop();
+		temp->testNode(TimeSlice);
+		p_queue.push(temp);
+		isExecuting = true;
+	}
+
+	if (isExecuting) {
+		cout << "at time : " << TimeNow << endl;
+		printPQNodes();
+	}
+
+#pragma endregion
+
+	/*
 #pragma region OriginalRETE_BFS
 	while (!pushedNode.empty()) {
 		//Maybe this is the indexing?
@@ -729,14 +753,17 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice)
 		pushedNode.erase(pushedNode.begin());
 	}
 #pragma endregion
+	*/
 
-#pragma region priorityqueue_style
-
-#pragma endregion
 
 	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
 	tree.RemoveAll();
 	
+}
+
+int ReteNet::GetNumberOfNodes()
+{
+	return NodeList.size();
 }
 
 void ReteNet::buildNetNode()
@@ -820,12 +847,17 @@ void ReteNet::buildNetNode()
 	sort(distanceNode.begin(), distanceNode.end());
 	distanceNode.erase(unique(distanceNode.begin(), distanceNode.end()), distanceNode.end());
 
-	////Addressing Node with spatio temporal condition
-	//for (int i = 0; i < NodeList.size(); i++) {
-	//	if (static_cast<BetaNode*>(NodeList[i])->getSpecialOpName() != "") {
-	//		nodewithspatialCondition.push_back(NodeList[i]);
-	//	}
-	//}
+	//Addressing Node with temporal condition
+	for (int i = 0; i < NodeList.size(); i++) {
+		if (NodeList[i]->getExecutionEstimated() != -1 ) {
+			//nodewithspatialCondition.push_back(NodeList[i]);
+			p_queue.push(NodeList[i]);
+		}
+	}
+
+	//show the priority queue list
+	printPQNodes();
+
 	////node w/ spatial indexing
 	//sort(nodewithspatialCondition.begin(), nodewithspatialCondition.end());
 	//nodewithspatialCondition.erase(unique(nodewithspatialCondition.begin(), nodewithspatialCondition.end()), nodewithspatialCondition.end());
@@ -878,6 +910,33 @@ void ReteNet::buildNetNode()
 	observed_obj_dict.erase(unique(observed_obj_dict.begin(), observed_obj_dict.end()), observed_obj_dict.end());
 
 	//int a = 10;
+}
+
+void ReteNet::printAllNodes()
+{
+	cout <<endl<< "-------------------------------------------------" << endl;
+	cout << "All Created Nodes: " << endl << endl;
+	cout << "Alpha Nodes:" << endl;
+	for (auto i : alphaListIDDictionary) {
+		cout << NodeList[i]->justCondition << endl;
+	}
+
+	cout << endl;
+	cout << "Beta Nodes:" << endl;
+	for (auto i : betaListIDDictionary) {
+		cout << NodeList[i]->justCondition << endl;
+	}
+	cout << endl;
+}
+
+void ReteNet::printPQNodes()
+{
+	temp_p_queue = p_queue;
+
+	cout << "Priority queue for spatiotemporal execution" << endl ;
+	for (; temp_p_queue.size() > 0; temp_p_queue.pop()) {
+		cout <<"trigger time: " << temp_p_queue.top()->getExecutionEstimated() << " -- Node condition :" << temp_p_queue.top()->justCondition << endl ;
+	}
 }
 
 Node* ReteNet::findNode(string expression, int nodeType)

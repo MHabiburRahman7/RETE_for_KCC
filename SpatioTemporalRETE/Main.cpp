@@ -5,7 +5,7 @@
 
 #include "ReteNet.h"
 
-using namespace std;
+//using namespace std;
 
 queue<EventPtr> generateSamepleLatLong(int number) {
 	
@@ -30,8 +30,8 @@ queue<EventPtr> generateSamepleLatLong(int number) {
 		e->addAttr("speed", (float)Utilities::randomFloat(3, 10)); //scalar
 		//e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial
 		//e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial
-		e->addAttr("lon", (float)Utilities::randomFloat(120, 121)); //spatial
-		e->addAttr("lat", (float)Utilities::randomFloat(30, 31)); //spatial
+		e->addAttr("lon", (float)Utilities::randomFloat(120, 131)); //spatial
+		e->addAttr("lat", (float)Utilities::randomFloat(30, 41)); //spatial
 		float ele = (float)Utilities::randomFloat(0, 10);
 		e->addAttr("elevation", ele); //scalar
 
@@ -99,10 +99,10 @@ int main() {
 			system("cls");
 			string temp, then_detect;
 			vector<string> master_str;
-			cout << "start with IF and finish with THEN" << endl <<endl;
+			cout << "start with IF and finish with THEN" << endl << endl;
 			cout << "example:" << endl;
 			cout << "IF speed > 10 & elevation > 10 & iff=ally" << endl;
-			cout << "THEN allyaircraft" << endl <<endl<< "or" <<endl<<endl;
+			cout << "THEN allyaircraft" << endl << endl << "or" << endl << endl;
 			cout << "IF distance(allyaircraft, enemyvessel) < 10 & allyaircraft.type=recon" << endl;
 			cout << "WINDOW range=5, trigger=5" << endl;
 			cout << "THEN airthreatdetected" << endl << endl;
@@ -129,6 +129,7 @@ int main() {
 
 			ReteNet::growTheNodes(colMade);
 
+			system("pause");
 			break;
 		}
 		case 2: {
@@ -234,14 +235,62 @@ int main() {
 				ReteNet::ExecuteRete(100);
 
 				//now the spatio temporal thing
-				ReteNet::SpatioTemporalExecution(100);
+				ReteNet::SpatioTemporalExecution(100, oneTimeEvent.front()->getInt("time"));
 
 				//tempWM.pop();
-				
+
 			}
 
 			system("pause");
 			break;
+		}case 5: {
+			system("cls");
+			ReteNet::buildNetNode();
+
+			cout << endl << "calculate time spent" << endl << endl;
+			cout << "Number of nodes: " << ReteNet::GetNumberOfNodes() << endl;
+
+			long long startTime = Utilities::getTime();
+
+			while (tempWM.size() > 0) {
+
+				/*
+				//this is real time mode --------------------------------------------------
+				EventPtr e = tempWM.front();
+				queue<EventPtr> singlePoint = {};
+				singlePoint.push(e);
+
+				ReteNet::cloneToWm(singlePoint);
+				//-------------------------------------------------------------------------
+				*/
+
+				//this is same-time mode --------------------------------------------------
+				int currTime = tempWM.front()->getInt("time");
+
+				queue<EventPtr> oneTimeEvent = {};
+				while (tempWM.front()->getInt("time") == currTime) {
+					oneTimeEvent.push(tempWM.front());
+					tempWM.pop();
+
+					if (tempWM.size() <= 0)
+						break;
+				}
+
+				ReteNet::cloneToWm(oneTimeEvent);
+				//-------------------------------------------------------------------------
+
+				//do pre-processing
+				ReteNet::ExecuteRete(100);
+
+				//now the spatio temporal thing
+				ReteNet::SpatioTemporalExecution(100, oneTimeEvent.front()->getInt("time"));
+
+				//tempWM.pop();
+
+			}
+			long long timeSpent = startTime - Utilities::getTime();
+			cout << "time spent: " << timeSpent << endl <<endl;
+			system("pause");
 		}
 		}
 
@@ -253,6 +302,7 @@ int main() {
 		cout << "3. generate random event" << endl;
 		cout << "4. run rete" << endl;
 		cin >> select;
+
 	}
 
 	return 0;

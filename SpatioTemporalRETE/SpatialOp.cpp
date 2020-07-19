@@ -20,13 +20,13 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	queue<EventPtr> final_res;
 
 	//it will execute the query after 
-	if (win->getInitTime() + win->getTriggerTime() < win->getHigheststOriginalTime()) {
-		win->setInitTime(win->getInitTime() + win->getTriggerTime()); // update the execution time
-	}
-	else {
-		//if it is not the time, it will return null
-		return {};
-	}
+	//if (win->getInitTime() + win->getTriggerTime() < win->getHigheststOriginalTime()) {
+	//	win->setInitTime(win->getInitTime() + win->getTriggerTime()); // update the execution time
+	//}
+	//else {
+	//	//if it is not the time, it will return null
+	//	return {};
+	//}
 
 	if (queryName == "crossing") {
 		queue<pair<EventPtr, EventPtr>> local_event = win->getDoubleRes();
@@ -374,12 +374,12 @@ EventPtr SpatialOp::calculate(EventPtr a, EventPtr b)
 void SpatialOp::setVarLimit(string limit)
 {
 	//because it is latitude and longitude, so 0.1 lat or long equal with 10 km
-	float temp;
-	temp = atof(limit.c_str());
-	temp /= 100;
-	varLimit = to_string(temp);
+	//float temp;
+	//temp = atof(limit.c_str());
+	//temp /= 100;
+	//varLimit = to_string(temp);
 	
-	//varLimit = limit;
+	varLimit = limit;
 }
 
 void SpatialOp::setVarCondition(string cond)
@@ -389,10 +389,20 @@ void SpatialOp::setVarCondition(string cond)
 
 void SpatialOp::anchorPush(vector<int> vec)
 {
+	//sort and distinct
+	//sort(vec.begin(), vec.end());
+	//vec.erase(unique(vec.begin(), vec.end()), vec.end());
+
 	//duplicate check
 	for (int j = 0; j < vec.size(); j++) {
 		
-		if (anchorObjList.size() == 0) {
+		anchorObjList.push_back(vec[j]);
+		//sort and distinct
+		sort(anchorObjList.begin(), anchorObjList.end());
+		anchorObjList.erase(unique(anchorObjList.begin(), anchorObjList.end()), anchorObjList.end());
+
+
+		/*if (anchorObjList.size() == 0) {
 			anchorObjList.push_back(vec[j]);
 		}
 		else {
@@ -406,7 +416,7 @@ void SpatialOp::anchorPush(vector<int> vec)
 			if (!dup) {
 				anchorObjList.push_back(vec[j]);
 			}
-		}
+		}*/
 	}
 }
 
