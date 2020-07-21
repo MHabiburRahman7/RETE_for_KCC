@@ -28,35 +28,51 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	//	return {};
 	//}
 
-	if (queryName == "crossing") {
-		queue<pair<EventPtr, EventPtr>> local_event = win->getDoubleRes();
+	//if (queryName == "crossing") {
+	//	queue<pair<EventPtr, EventPtr>> local_event = win->getDoubleRes();
+	//
+	//	//objectId distinction --> left is the anchor --> HAVE TO WORK ON IT
+	//	//bypass this/ No we can't --> aaaah screaming in confusion ._.
+	//
+	//	//lets work on vectors
+	//	vector<pair<EventPtr, EventPtr>> v_local_event;
+	//	while (local_event.size() > 0) {
+	//		v_local_event.push_back(local_event.front());
+	//		local_event.pop();
+	//	}
+	//
+	//	for (int i = 0; i < v_local_event.size()-1; i++) {
+	//		for (int j = 0; j < v_local_event.size()-1; j++) {
+	//			bool ans = intersectLineSegment(v_local_event[i].first, v_local_event[i + 1].first, v_local_event[j].second, v_local_event[j + 1].second);
+	//
+	//			if (ans) {
+	//				//time is based on the latest event happend
+	//				Event* e = new Event(Utilities::id++, v_local_event[i].second->getInt("time"));
+	//				e->addAttr("cross", "true");
+	//				e->addAttr("objId_left", v_local_event[i].first->getInt("objId"));
+	//				e->addAttr("objId_right", v_local_event[i].second->getInt("objId"));
+	//
+	//				final_res.push(EventPtr(e));
+	//			}
+	//		}
+	//	}
+	//	return final_res;
+	//}
+	if (queryName == "crossing") { // still need to be fixed
+		queue<EventPtr> res = win->getOriginalRes();
 
-		//objectId distinction --> left is the anchor --> HAVE TO WORK ON IT
-		//bypass this/ No we can't --> aaaah screaming in confusion ._.
-
-		//lets work on vectors
-		vector<pair<EventPtr, EventPtr>> v_local_event;
-		while (local_event.size() > 0) {
-			v_local_event.push_back(local_event.front());
-			local_event.pop();
+		//separate each event
+		map<int, vector<EventPtr>> separatedEvents;
+		for (; res.size() > 0; res.pop()) {
+			separatedEvents[res.front()->getInt("time")].push_back(res.front());
 		}
 
-		for (int i = 0; i < v_local_event.size()-1; i++) {
-			for (int j = 0; j < v_local_event.size()-1; j++) {
-				bool ans = intersectLineSegment(v_local_event[i].first, v_local_event[i + 1].first, v_local_event[j].second, v_local_event[j + 1].second);
+		//evaluate each time ticks
+		for (int i = 1; i < separatedEvents.size(); i++) {
 
-				if (ans) {
-					//time is based on the latest event happend
-					Event* e = new Event(Utilities::id++, v_local_event[i].second->getInt("time"));
-					e->addAttr("cross", "true");
-					e->addAttr("objId_left", v_local_event[i].first->getInt("objId"));
-					e->addAttr("objId_right", v_local_event[i].second->getInt("objId"));
-
-					final_res.push(EventPtr(e));
-				}
-			}
 		}
-		return final_res;
+
+		//for(int i=0; i<)
 	}
 	else if (queryName == "distance") {
 		// so the window is full, what do we do?
@@ -250,7 +266,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		queue<EventPtr> res = win->getOriginalRes();
 
 		if (res.size() > 0) {
-			Event* e = new Event(Utilities::id++, res.back()->getInt("time"));
+			//Event* e = new Event(Utilities::id++, res.back()->getInt("time"));
+			Event* e = new Event(Utilities::id++, win->getInitTime());
 			win->addResultEvent(EventPtr(e));
 		}
 		
@@ -281,7 +298,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		}
 
 		if (!ischanged) {
-			Event* e = new Event(Utilities::id++, lastTime);
+			//Event* e = new Event(Utilities::id++, lastTime);
+			Event* e = new Event(Utilities::id++, win->getInitTime());
 			win->addResultEvent(EventPtr(e));
 		}
 
@@ -303,7 +321,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		for (auto& it : separatedEvents) {
 			new_diff = it.second.size();
 			if (old_diff > new_diff) { // this is the difference
-				Event* e = new Event(Utilities::id++, it.first);
+				//Event* e = new Event(Utilities::id++, it.first);
+				Event* e = new Event(Utilities::id++, win->getInitTime());
 				win->addResultEvent(EventPtr(e));
 			}
 			old_diff = new_diff;
@@ -327,13 +346,17 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		for (auto &it : separatedEvents) {
 			new_diff = it.second.size();
 			if (old_diff < new_diff) { // this is the difference
-				Event* e = new Event(Utilities::id++, it.first);
+				//Event* e = new Event(Utilities::id++, it.first);
+				Event* e = new Event(Utilities::id++, win->getInitTime());
 				win->addResultEvent(EventPtr(e));
 			}
 			old_diff = new_diff;
 		}
 
 		return win->getFinalRes();
+	}
+	else if (queryName.find("count") > 0) {
+
 	}
 
 	return final_res;

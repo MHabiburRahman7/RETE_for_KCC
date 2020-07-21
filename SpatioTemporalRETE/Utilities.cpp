@@ -1,6 +1,7 @@
 #include "Utilities.h"
 
 unsigned long Utilities::id = 0;
+unsigned long Utilities::time = 0;
 
 Utilities::Utilities()
 {

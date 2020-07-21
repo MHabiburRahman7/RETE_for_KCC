@@ -10,26 +10,40 @@
 queue<EventPtr> generateSamepleLatLong(int number) {
 	
 	queue<EventPtr> ev;
-	//scenario --> 4 vessel - 2 ally, 2 enemy
 
 	Event* e;
-	int time_now = 0;
+	//use system wise time
+	int time_now = Utilities::time;
+
 	for (int i = 0; i < number; i++) {
 		e = new Event(Utilities::id++, time_now);
-		if (i % 4 == 3)
-			time_now++;
+		if (i % 4 == 3) {
+			Utilities::time++;
+			time_now = Utilities::time;
+		}
 
-		if (i % 2 == 0) {
+//#pragma region 2 ally 2 enemy
+//		if (i % 2 == 0) {
+//			e->addAttr("iff", "ally"); // scalar
+//		}
+//		else {
+//			e->addAttr("iff", "enemy");
+//		}
+//#pragma endregion
+
+#pragma region 1 ally 3 enemy
+		if (i % 4 == 0) {
 			e->addAttr("iff", "ally"); // scalar
 		}
 		else {
 			e->addAttr("iff", "enemy");
 		}
+#pragma endregion
 
 		e->addAttr("type", "recon"); //sclar
 		e->addAttr("speed", (float)Utilities::randomFloat(3, 10)); //scalar
-		//e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial
-		//e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial
+		//e->addAttr("lon", (float)Utilities::randomFloat(120, 133)); //spatial_original_range
+		//e->addAttr("lat", (float)Utilities::randomFloat(30, 42)); //spatial_original_range
 		e->addAttr("lon", (float)Utilities::randomFloat(120, 131)); //spatial
 		e->addAttr("lat", (float)Utilities::randomFloat(30, 41)); //spatial
 		float ele = (float)Utilities::randomFloat(0, 10);
@@ -40,6 +54,7 @@ queue<EventPtr> generateSamepleLatLong(int number) {
 		ev.push(EventPtr(e));
 	}
 
+	int a;
 	return ev;
 }
 

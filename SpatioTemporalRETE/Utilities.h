@@ -22,8 +22,9 @@ public:
 
 	Utilities();
 
-	//system wise id
+	//system wise id & time
 	static unsigned long id;
+	static unsigned long time;
 
 	//tokenizing
 	static vector<pair<string, string>> tokenize(string temp);

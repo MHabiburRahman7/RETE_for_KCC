@@ -708,18 +708,18 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 
 #pragma region Execute based on priority queue
 
-	bool isExecuting = false;
-	while (p_queue.top()->getExecutionEstimated() == TimeNow) {
+	//bool isExecuting = false;
+	//if (p_queue.top()->getExecutionEstimated() == TimeNow) {
+	//	cout << "at time : " << TimeNow << endl;
+	//	printPQNodes();
+	//}
+
+	while (p_queue.top()->getExecutionEstimated() == TimeNow || p_queue.top()->getExecutionEstimated() <= TimeNow) {
 		Node* temp = p_queue.top();
 		p_queue.pop();
 		temp->testNode(TimeSlice);
 		p_queue.push(temp);
-		isExecuting = true;
-	}
-
-	if (isExecuting) {
-		cout << "at time : " << TimeNow << endl;
-		printPQNodes();
+		//isExecuting = true;
 	}
 
 #pragma endregion
@@ -847,6 +847,10 @@ void ReteNet::buildNetNode()
 	sort(distanceNode.begin(), distanceNode.end());
 	distanceNode.erase(unique(distanceNode.begin(), distanceNode.end()), distanceNode.end());
 
+	//Reset the queue
+	while (p_queue.size() > 0) {
+		p_queue.pop();
+	}
 	//Addressing Node with temporal condition
 	for (int i = 0; i < NodeList.size(); i++) {
 		if (NodeList[i]->getExecutionEstimated() != -1 ) {
