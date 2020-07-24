@@ -49,6 +49,9 @@ private:
 	string varLimit;
 	string varCondition;
 
+	string aggregate_entity;
+	string aggregate_data;
+
 	string triggerType;
 	float triggTime;
 	//Event tempEvent;

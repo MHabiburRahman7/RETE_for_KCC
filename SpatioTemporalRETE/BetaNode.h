@@ -52,6 +52,7 @@ public:
 
 	void setWindow(int len, int step);
 	void setMatchingKey(string newKey);
+	void setAggregateCondition(string expression);
 
 	int setLeftConnection(Node* node);
 	int setRightConnection(Node* node);

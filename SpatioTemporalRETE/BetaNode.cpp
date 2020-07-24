@@ -160,7 +160,11 @@ void BetaNode::setMatchingKey(string newKey)
 	key = newKey;
 }
 
-
+void BetaNode::setAggregateCondition(string expression)
+{
+	specialOperation = expression;
+	thisSpatialOp = new SpatialOp(expression);
+}
 
 Node* BetaNode::getSinglePair(int i)
 {
@@ -362,8 +366,10 @@ int BetaNode::justTest()
 
 							Event* r = e->clone();
 
-							if(win)
+							if(win && thisSpatialOp == NULL)
 								win->addResultEvent(EventPtr(e));
+							else
+								win->addEvent(EventPtr(e));
 
 							EventResult.push(EventPtr(r));
 							//left->pop();

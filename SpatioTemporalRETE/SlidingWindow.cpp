@@ -9,6 +9,9 @@ SlidingWindow::SlidingWindow(int len, int step)
 
 void SlidingWindow::refresh(queue<EventPtr>& eventRes)
 {
+	if (eventRes.size() <= 0)
+		return;
+
 	int latest_time = eventRes.back()->getInt("time"); // time n until n - len
 	
 	//FOR GREATER GOOD :"

@@ -2,7 +2,25 @@
 
 SpatialOp::SpatialOp(string name)
 {
-	queryName = name;
+	size_t dot_location = -1;
+	dot_location = name.find(".");
+	if (dot_location > 0) {
+		queryName = name.substr(0, dot_location);
+		name = name.erase(0, dot_location+1);
+		dot_location = name.find(".");
+		if (dot_location > 0) {
+			aggregate_entity = name.substr(0, dot_location); // if it contain "ally" so it is anchor obj
+			name = name.erase(0, dot_location + 1);
+			aggregate_data= name;
+		}
+		else
+		{
+			varCondition = name;
+			varLimit = "All";
+		}
+
+	}else
+		queryName = name;
 }
 
 bool ReturnVal(int id, void* arg)
@@ -302,8 +320,6 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 	//}
 #pragma endregion
 
-
-
 		return win->getFinalRes();
 	}
 	else if (queryName == "exist") {
@@ -400,8 +416,66 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 
 		return win->getFinalRes();
 	}
-	else if (queryName.find("count") > 0) {
+	else if (queryName == "count") { //it should be object_id
+		queue<EventPtr> res = win->getOriginalRes();
 
+		//decompose the anchor obj
+		vector<string> an_received = Utilities::splitDelim(res.front()->getString("anchors"), ",");
+		an_received.erase(an_received.end()-1);
+		for (int i = 0; i < an_received.size(); i++) {
+			int temp;
+			temp = atoi(an_received[i].c_str());
+
+			//push back to list
+			anchorObjList.push_back(temp);
+		}
+
+
+		size_t isAnchor = aggregate_entity.find("ally");
+
+		if (isAnchor != std::string::npos) {
+			//distinguish
+			map<int, int> count_temp;
+			queue<EventPtr> tempPtr;
+			for (; res.size() > 0; res.pop()) {
+				// ally is anchor obj
+				for (int i = 0; i < anchorObjList.size(); i++) {
+					if (res.front()->getInt(aggregate_data) == anchorObjList[i])
+						count_temp[res.front()->getInt(aggregate_data)] = anchorObjList[i];
+				}
+				tempPtr.push(res.front());
+			}
+
+			for (; tempPtr.size() > 0; tempPtr.pop()) {
+				tempPtr.front()->addAttr(queryName, (int)count_temp.size());
+				win->addResultEvent(tempPtr.front());
+			}
+		}
+		else {
+			//distinguish
+			map<int, int> count_temp;
+			queue<EventPtr> tempPtr;
+			for (; res.size() > 0; res.pop()) {
+				// ally is anchor obj
+				bool isNotAlly = false;
+				for (int i = 0; i < anchorObjList.size(); i++) {
+					if (res.front()->getInt(aggregate_data) == anchorObjList[i])
+						isNotAlly = true;
+				}
+
+				if(!isNotAlly)
+					count_temp[res.front()->getInt(aggregate_data)] = 1;
+
+				tempPtr.push(res.front());
+			}
+
+			for (; tempPtr.size() > 0; tempPtr.pop()) {
+				tempPtr.front()->addAttr(queryName, (int)count_temp.size());
+				win->addResultEvent(tempPtr.front());
+			}
+		}
+
+		return win->getFinalRes();
 	}
 
 	return final_res;

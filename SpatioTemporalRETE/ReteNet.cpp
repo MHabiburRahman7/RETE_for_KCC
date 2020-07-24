@@ -57,7 +57,15 @@ vector<vector<pair<string, string>>> ReteNet::parseConditionOriginal(vector<stri
 			}
 		}
 		else if ("then" == clause) {//then = 
-			SingleExpressionMade.push_back({ "term", value });
+
+			vector<string> temp_string = Utilities::splitDelim(value, ",");
+
+			for (int i = 0; i < temp_string.size(); i++) {
+				if(i==0)
+					SingleExpressionMade.push_back({ "term", temp_string[i] });
+				else
+					SingleExpressionMade.push_back({ "aggr", temp_string[i] });
+			}
 		}
 
 		collectedMade.push_back(SingleExpressionMade);
@@ -352,6 +360,11 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 							(n3)->setWindow(range, step);
 					}
 
+					//add additional aggregate if exist
+					if (exp_vec[i].size() > 1) {
+						static_cast<BetaNode*>(n3)->setAggregateCondition(exp_vec[i][1].second);
+					}
+
 					connectNodes(*n1, *n2, *n3);
 				}
 				else { // no beta node created or this expression is single expression
@@ -387,6 +400,11 @@ void ReteNet::growTheNodes(vector<vector<pair<string, string>>> exp_vec)
 							(n2)->setWindow(range, step);
 						if(n2!=NULL)
 							(n3)->setWindow(range, step);
+					}
+
+					//add additional aggregate if exist
+					if (exp_vec[i].size() > 1) {
+						static_cast<BetaNode*>(n3)->setAggregateCondition(exp_vec[i][1].second);
 					}
 
 					connectNodes(*n1, *n2, *n3);
