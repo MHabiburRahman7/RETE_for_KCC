@@ -519,36 +519,14 @@ int BetaNode::justTest()
 	
 	if(win != NULL && specialOperation != ""){
 		//Spatial Op
-		ClearResult();
+		//ClearResult();
 		EventResult = thisSpatialOp->process(win, anchorObjId);
 	}
 
 	if (win != NULL && EventResult.size() > 0 && specialOperation == "") {
-		//queue<EventPtr> local_win = win->getFinalRes();
-
-		//for (; EventResult.size() > 0; EventResult.pop()) {
-		//	//EventResult.pop();
-		//}
-
-		//EventResult = win->getFinalRes();
-
-		/*for (; local_win.size() > 0; local_win.pop()) {
-			EventResult.push(local_win.front());
-		}*/
-		
-		/*
-		queue<EventPtr>* local_win = win->getFinalRes();
-
-		queue<EventPtr> dummy_val = *local_win;
-
-		EventResult = {};
-
-		for (; dummy_val.size() > 0; dummy_val.pop()) {
-			EventResult.push(dummy_val.front());
-		}*/
 
 		//EventResult = *local_win;
-		ClearResult();
+		//ClearResult();
 		EventResult = win->getFinalRes();
 		//int c = 11;
 	}

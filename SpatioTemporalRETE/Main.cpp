@@ -3,6 +3,9 @@
 #include <string>
 #include <list>
 
+#define INDEXED_MODE
+//#define NON_INDEXED_MODE
+
 #include "ReteNet.h"
 
 //using namespace std;

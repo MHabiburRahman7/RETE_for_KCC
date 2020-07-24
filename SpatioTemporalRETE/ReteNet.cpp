@@ -594,6 +594,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 //
 //#pragma endregion
 	
+	/*
 #pragma region 3DimRegion
 	RTree<int, float, 3, float> tree; // lat, long, anchor_enum
 	//enum dictionaries --> well it is based on the hash map then
@@ -705,6 +706,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 	}
 
 #pragma endregion	
+	*/
 
 #pragma region Execute based on priority queue
 
@@ -757,7 +759,7 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 
 
 	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
-	tree.RemoveAll();
+	//tree.RemoveAll();
 	
 }
 
