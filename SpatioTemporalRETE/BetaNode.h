@@ -57,8 +57,6 @@ public:
 	int setLeftConnection(Node* node);
 	int setRightConnection(Node* node);
 
-	int processBetaNode(int timeSlice);
-
 	bool isEmptyResult();
 	int justTest();
 	void forcePushInQueue(EventPtr* result, bool toLeft = true);

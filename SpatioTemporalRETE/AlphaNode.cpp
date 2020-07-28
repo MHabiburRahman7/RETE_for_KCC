@@ -250,22 +250,23 @@ int AlphaNode::justTest(int TimeSlice)
 			cases = 4;
 
 		int timeSlice_i = TimeSlice;
+		string DataType = Utilities::ToLower(thisDataType);
 		while (!inputQueue.first.empty() && timeSlice_i > 0) {//current input queue is not empty.
 			EventPtr originalFrontEvent = inputQueue.first.front();
 
-			if (cases == 0 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) <= limit) {
+			if (cases == 0 && originalFrontEvent->getFloat(DataType) <= limit) {
 				EventResult.push(originalFrontEvent);
 			}
-			else if (cases == 1 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) >= limit) {
+			else if (cases == 1 && originalFrontEvent->getFloat(DataType) >= limit) {
 				EventResult.push(originalFrontEvent);
 			}
-			else if (cases == 2 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) < limit) {
+			else if (cases == 2 && originalFrontEvent->getFloat(DataType) < limit) {
 				EventResult.push(originalFrontEvent);
 			}
-			else if (cases == 3 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) > limit) {
+			else if (cases == 3 && originalFrontEvent->getFloat(DataType) > limit) {
 				EventResult.push(originalFrontEvent);
 			}
-			else if (cases == 4 && originalFrontEvent->getFloat(Utilities::ToLower(thisDataType)) == limit) {
+			else if (cases == 4 && originalFrontEvent->getFloat(DataType) == limit) {
 				EventResult.push(originalFrontEvent);
 			}
 

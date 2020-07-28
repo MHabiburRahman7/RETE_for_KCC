@@ -1,5 +1,8 @@
 #include "ReteNet.h"
 
+#define INDEX_ON
+//#define INDEX_OFF
+
 WorkingMemory ReteNet::m_WMSet;
 
 vector<int>ReteNet::alphaListIDDictionary;
@@ -101,21 +104,6 @@ void ReteNet::tokenizeMultiExpCEP(string input, vector<pair<string, string>>& re
 				}else// just string --> allyObj
 					res.push_back({ "beta", expression });
 			}
-
-			//string stream;
-			//string fieldName;
-			//string mid;
-			//string right;
-			//tokenizeSingleExp(expression, stream, fieldName, mid, right);
-
-			//int index1 = fieldName.find("(");
-			//int index2 = fieldName.find(")");
-			//if ((index1 > -1 && index2 > -1) /*|| OperatorRegister::isOperator(fieldName)*/) {
-			//	andPredicate->addChild(parseExpressionWithOperator(expression));
-			//}
-			//else {
-			//	andPredicate->addChild(parseValueExpression(fieldName, mid, right));
-			//}
 
 			res.push_back({ "condition", "and" });
 		}
@@ -466,23 +454,25 @@ void ReteNet::ExecuteRete(int TimeSlice)
 		//This is the borderline ----------------------------------------------------------------------------
 		//let the spatial rule processed outside
 		if (dynamic_cast<BetaNode*>(pushedNode[0])) {
-			if (dynamic_cast<BetaNode*>(pushedNode[0])->getSpecialOpName() != "" || pushedNode[0]->getExecutionEstimated() > 0) {
+			//if (dynamic_cast<BetaNode*>(pushedNode[0])->getSpecialOpName() != "" || pushedNode[0]->getExecutionEstimated() > 0) {
+			if (pushedNode[0]->getExecutionEstimated() > 0) {
 				pushedNode.erase(pushedNode.begin());
 				continue;
 			}
 		}
 
 		//Maybe this is the indexing?
+//#ifdef INDEX_ON
 		int testStatus = pushedNode[0]->testNode(TimeSlice);
 
 		if (testStatus == 0) {
 			pushedNode.erase(pushedNode.begin());
-			//for (auto p : pushedNode) {
-
-			//}
 			continue;
 		}
+//#endif // INDEX_ON
 
+		//pushedNode[0]->testNode(TimeSlice);
+		
 		//Activate successor node	
 		for (int i = 0; i < pushedNode[0]->getAllPairs().size(); i++) {
 
@@ -612,12 +602,15 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 //
 //#pragma endregion
 	
-	/*
+#ifdef INDEX_ON
 #pragma region 3DimRegion
 	RTree<int, float, 3, float> tree; // lat, long, anchor_enum
 	//enum dictionaries --> well it is based on the hash map then
 	//number of vec_anchor_id and nodewithspatialindex are same
 	//the difference is just one only handle string, one handle the node also
+
+	/*
+#pragma region OldAnchorEventAddressing
 	for (int j = 0; j < vec_anchor_id.size(); j++) {
 		if (anchor_stab_map.find(vec_anchor_id[j].first.first) != anchor_stab_map.end()) // check based on the dictionaries
 		{
@@ -649,28 +642,79 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 			}
 		}
 	}
+#pragma endregion
+	*/
 
+#pragma region newAnchorEventAddressing
+	string prev_entity = "";
+
+	queue<EventPtr> oneTimeEvent_master = {};
+	queue<EventPtr> oneTimeEvent_child = {};
+	for (int j = 0; j < distanceNode.size(); j++) {
+		
+		//one time fetching, if the next entity name is same, so don't fetch cuz its empty :"
+		if (prev_entity != static_cast<BetaNode*>(distanceNode[j])->getLeftConnName()) {
+
+			prev_entity = static_cast<BetaNode*>(distanceNode[j])->getLeftConnName();
+			oneTimeEvent_master = findNode(prev_entity,1)->getEvRes();
+
+			oneTimeEvent_child = oneTimeEvent_master;
+		}
+		else {
+			oneTimeEvent_child = oneTimeEvent_master;
+		}
+		
+		if (anchor_stab_map.find(static_cast<BetaNode*>(distanceNode[j])->getLeftConnName()) != anchor_stab_map.end()) // dia adalah anchor stab map yang ke j berarti termasuk achor
+		{
+			for (; oneTimeEvent_child.size() > 0; oneTimeEvent_child.pop()) {
+
+				float xpos[3], ypos[3];
+				//just initiated
+				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
+				xpos[0] = oneTimeEvent_child.front()->getFloat("lat") - (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
+				xpos[1] = oneTimeEvent_child.front()->getFloat("lat") + (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
+
+				ypos[0] = oneTimeEvent_child.front()->getFloat("lon") - (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
+				ypos[1] = oneTimeEvent_child.front()->getFloat("lon") + (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
+
+				//3rd dimension is the enum
+				vector<int> corresponding_dimension = findCorrespondingAnchor(static_cast<BetaNode*>(distanceNode[j])->getRightConnName(), observed_obj_dict);
+				for (int k = 0; k < corresponding_dimension.size(); k++) {
+					xpos[2] = corresponding_dimension[k];
+					ypos[2] = corresponding_dimension[k];
+
+					tree.Insert(xpos, ypos, distanceNode[j]->getID());
+				}
+
+
+				//insert to the node
+				dynamic_cast<BetaNode*>(distanceNode[j])->forcePushInQueue(&oneTimeEvent_child.front(), true);
+			}
+		}
+	}
+#pragma endregion
 	//the tree is set now
-	
+
+	/*
+#pragma region OldTreeTesting
 	//now test with the enemys
-	vector<Node*> pushedNode = {};
-	//vector<EventPtr> distinctTestedObj = {};
+	//vector<Node*> pushedNode = {}; //this is for bfs style, now we use priority queue
 	vector<vector<EventPtr>> organizedTestEvents = {};
 	vector<int> nhits_vec;
-	
+
 	//initiate the organizedTestEvents
 	for (int j = 0; j < observed_obj_dict.size(); j++) {
 		organizedTestEvents.push_back({});
 	}
 
-	
+
 	for (int j = 0; j < vec_anchor_id.size(); j++) {
 
 		//find is it belong to which index?
 		std::vector<string>::iterator it;
 		it = find(observed_obj_dict.begin(), observed_obj_dict.end(), vec_anchor_id[j].first.second);
 		int dist = distance(observed_obj_dict.begin(), it);
-		
+
 		//assign to each observed index
 		queue<EventPtr> testEventQueue = static_cast<BetaNode*>(distanceNode[j])->getRightInput();
 		for (; testEventQueue.size() > 0; testEventQueue.pop()) {
@@ -679,15 +723,15 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 		}
 
 		//distinct enemy event
-		sort(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end());
-		organizedTestEvents[dist].erase(unique(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end()), organizedTestEvents[dist].end());
+		//std::sort(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end());
+		//organizedTestEvents[dist].erase(unique(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end()), organizedTestEvents[dist].end());
 
 		//empty the node
 		// it have to be the right one ._.
 		queue<EventPtr> ept = {};
 		static_cast<BetaNode*>(distanceNode[j])->ClearInputQueue(false);
 	}
-	
+
 	//------------------------------------------------------------------------------------------------
 	//after it is dinctinct, so we can process the stabbing process
 	//organizedevents is organized as follow --> [dictionary id][vector of event pointer]
@@ -703,8 +747,8 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 			nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
 
 			//distinct the correlated beta nodes that hit
-			sort(nhits_vec.begin(), nhits_vec.end());
-			nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
+			//sort(nhits_vec.begin(), nhits_vec.end());
+			//nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
 
 			//push this into rete net
 			//this must be on the right
@@ -713,18 +757,89 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 				if (dynamic_cast<BetaNode*>(tempNode)) {
 					dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&organizedTestEvents[i][j], false);
 
-					pushedNode.push_back(tempNode);
+					////the bfs purpose
+					//pushedNode.push_back(tempNode);
 
-					//sort and distinct
-					sort(pushedNode.begin(), pushedNode.end());
-					pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
+					////sort and distinct
+					//std::sort(pushedNode.begin(), pushedNode.end());
+					//pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
 				}
 			}
 		}
 	}
-
-#pragma endregion	
+#pragma endregion
 	*/
+	
+#pragma region newTreeTesting
+	//now test with the enemys
+	vector<vector<EventPtr>> organizedTestEvents = {};
+	vector<int> nhits_vec;
+
+	//initiate the organizedTestEvents
+	for (int j = 0; j < observed_obj_dict.size(); j++) {
+		organizedTestEvents.push_back({});
+	}
+
+	prev_entity = "";
+	for (int j = 0; j < vec_anchor_id.size(); j++) {
+
+		//find is it belong to which index?
+		std::vector<string>::iterator it;
+		it = find(observed_obj_dict.begin(), observed_obj_dict.end(), vec_anchor_id[j].first.second);
+		int dist = distance(observed_obj_dict.begin(), it);
+
+		//assign to each observed index
+		if (prev_entity != static_cast<BetaNode*>(distanceNode[j])->getRightConnName()) {
+			prev_entity = static_cast<BetaNode*>(distanceNode[j])->getRightConnName();
+			oneTimeEvent_master = findNode(prev_entity, 1)->getEvRes();
+
+			oneTimeEvent_child = oneTimeEvent_master;
+		}
+		else {
+			oneTimeEvent_child = oneTimeEvent_master;
+		}
+
+		if (organizedTestEvents[dist].size() <= 0) {
+			for (; oneTimeEvent_child.size() > 0; oneTimeEvent_child.pop()) {
+
+				organizedTestEvents[dist].push_back(oneTimeEvent_child.front());
+			}
+		}
+
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//after it is dinctinct, so we can process the stabbing process
+	//organizedevents is organized as follow --> [dictionary id][vector of event pointer]
+	for (int i = 0; i < organizedTestEvents.size(); i++) {
+		for (int j = 0; j < organizedTestEvents[i].size(); j++) {
+
+			float xpos[3], ypos[3];
+			xpos[0] = xpos[1] = organizedTestEvents[i][j]->getFloat("lat");
+			ypos[0] = ypos[1] = organizedTestEvents[i][j]->getFloat("lon");
+
+			xpos[2] = ypos[2] = i; // i is dictionary id
+
+			nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
+
+			//distinct the correlated beta nodes that hit
+
+			//push this into rete net
+			//this must be on the right
+			for (auto n : nhits_vec) {
+				Node* tempNode = NodeList[n];
+				if (dynamic_cast<BetaNode*>(tempNode)) {
+					dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&organizedTestEvents[i][j], false);
+				}
+			}
+		}
+	}
+#pragma endregion
+	
+	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
+	tree.RemoveAll();
+#pragma endregion	
+#endif // INDEX_ON
 
 #pragma region Execute based on priority queue
 
@@ -775,9 +890,6 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 #pragma endregion
 	*/
 
-
-	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
-	//tree.RemoveAll();
 	
 }
 
@@ -862,9 +974,9 @@ void ReteNet::buildNetNode()
 		}
 	}
 	//discritize vec_anchor_id & mbr node
-	sort(vec_anchor_id.begin(), vec_anchor_id.end());
+	std::sort(vec_anchor_id.begin(), vec_anchor_id.end());
 	vec_anchor_id.erase(unique(vec_anchor_id.begin(), vec_anchor_id.end()), vec_anchor_id.end());
-	sort(distanceNode.begin(), distanceNode.end());
+	std::sort(distanceNode.begin(), distanceNode.end());
 	distanceNode.erase(unique(distanceNode.begin(), distanceNode.end()), distanceNode.end());
 
 	//Reset the queue
@@ -930,7 +1042,7 @@ void ReteNet::buildNetNode()
 		}
 	}
 	//disctitize the observed_obj enumeration
-	sort(observed_obj_dict.begin(), observed_obj_dict.end());
+	std::sort(observed_obj_dict.begin(), observed_obj_dict.end());
 	observed_obj_dict.erase(unique(observed_obj_dict.begin(), observed_obj_dict.end()), observed_obj_dict.end());
 
 	//int a = 10;

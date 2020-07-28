@@ -1,14 +1,17 @@
 #include "SpatialOp.h"
 
+#define INDEX_ON
+//#define INDEX_OFF
+
 SpatialOp::SpatialOp(string name)
 {
 	size_t dot_location = -1;
 	dot_location = name.find(".");
-	if (dot_location > 0) {
+	if (dot_location != string::npos) {
 		queryName = name.substr(0, dot_location);
 		name = name.erase(0, dot_location+1);
 		dot_location = name.find(".");
-		if (dot_location > 0) {
+		if (dot_location != string::npos) {
 			aggregate_entity = name.substr(0, dot_location); // if it contain "ally" so it is anchor obj
 			name = name.erase(0, dot_location + 1);
 			aggregate_data= name;
@@ -104,11 +107,11 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 		//	res.pop();
 		//}
 
-		/*
+#ifdef INDEX_ON
 #pragma region Indexed_mode
-		//we don't need to re-calculate based on r-tree again, because it is already calculated by node indexing
-		//we just pass all of the input buffer to result buffer
-		//dont forget to pass the anchors
+//we don't need to re-calculate based on r-tree again, because it is already calculated by node indexing
+//we just pass all of the input buffer to result buffer
+//dont forget to pass the anchors
 		string tempAnchors;
 		char buff[10];
 		for (auto a : anchorObjList) {
@@ -121,7 +124,8 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 			win->addResultEvent(res.front());
 		}
 #pragma endregion
-		*/
+#endif // INDEX_ON
+		
 /*
 #pragma region RTreeRegion
 		RTree<int, float, 2, float> tree;
@@ -252,73 +256,70 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 #pragma endregion
 		*/
 
-
+#ifdef INDEX_OFF
 #pragma region ManualDistCalculation
-	float res_calc;
+float res_calc;
 
-	while (res.size() > 0) {
-		int time_now = res.front()->getTime();
+while (res.size() > 0) {
+	int time_now = res.front()->getTime();
 
-		//distinguish the anchor
-		vector<EventPtr> one_time_event_a, one_time_event_t;
-		while ( res.front()->getTime() == time_now) {
-			//one_time_event.push_back(res.front());
-			
-			bool isAnchor = false;
-			for (int i = 0; i < anchorObjList.size(); i++) {
-				if (anchorObjList[i] == res.front()->getInt("objid")) {
-					one_time_event_a.push_back(res.front());
-					isAnchor = true;
-				}
+	//distinguish the anchor
+	vector<EventPtr> one_time_event_a, one_time_event_t;
+
+	while (res.front()->getTime() == time_now) {
+		//one_time_event.push_back(res.front());
+
+		bool isAnchor = false;
+		for (int i = 0; i < anchorObjList.size(); i++) {
+			if (anchorObjList[i] == res.front()->getInt("objid")) {
+				one_time_event_a.push_back(res.front());
+				isAnchor = true;
 			}
-			if (isAnchor) {
-				res.pop();
-				continue;
-			}
-
-			one_time_event_t.push_back(res.front());
+		}
+		if (isAnchor) {
 			res.pop();
 
 			if (res.size() <= 0)
 				break;
+
+			continue;
 		}
 
-		//get the anchor
-		for (int i = 0; i < one_time_event_a.size(); i++) {
-			for (int j = 0; j < one_time_event_t.size(); j++) {
-				res_calc = sqrt(pow((one_time_event_a[i]->getFloat("lat") - (one_time_event_t[j]->getFloat("lat"))), 2) 
-					+ pow((one_time_event_t[j]->getFloat("lon") - (one_time_event_a[i]->getFloat("lon"))), 2));
+		one_time_event_t.push_back(res.front());
+		res.pop();
 
-				if (varCondition == "<" && res_calc < atof(varLimit.c_str())) {
-					
+		if (res.size() <= 0)
+			break;
+	}
 
-					string tempAnchors;
-					char buff[10];
-					for (auto a : anchorObjList) {
-						tempAnchors += _itoa(a, buff, 10);
-						tempAnchors += ",";
-					}
-					one_time_event_a[i]->addAttr("anchors", tempAnchors);
-					one_time_event_t[j]->addAttr("anchors", tempAnchors);
+	//get the anchor
+	for (int i = 0; i < one_time_event_a.size(); i++) {
+		for (int j = 0; j < one_time_event_t.size(); j++) {
+			res_calc = sqrt(pow((one_time_event_a[i]->getFloat("lat") - (one_time_event_t[j]->getFloat("lat"))), 2)
+				+ pow((one_time_event_t[j]->getFloat("lon") - (one_time_event_a[i]->getFloat("lon"))), 2));
 
-					win->addResultEvent(one_time_event_a[i]);
-					win->addResultEvent(one_time_event_t[j]);
+			if (varCondition == "<" && res_calc < atof(varLimit.c_str())) {
+
+				string tempAnchors;
+				char buff[10];
+				for (auto a : anchorObjList) {
+					tempAnchors += _itoa(a, buff, 10);
+					tempAnchors += ",";
 				}
+				one_time_event_a[i]->addAttr("anchors", tempAnchors);
+				one_time_event_t[j]->addAttr("anchors", tempAnchors);
+
+				win->addResultEvent(one_time_event_a[i]);
+				win->addResultEvent(one_time_event_t[j]);
 			}
 		}
 	}
-
-	//res_calc = sqrt(pow((b->getFloat("lat") - (a->getFloat("lat"))), 2) + pow((b->getFloat("lon") - (a->getFloat("lon"))), 2));
-
-	//if (varCondition == "<" && res < atof(varLimit.c_str())) {
-	//	Event* e = new Event(Utilities::id++, a->getInt("time"));
-	//	e->addAttr("dist", res);
-	//	e->addAttr("objLeft", a->getInt("objid"));
-	//	e->addAttr("objright", b->getInt("objid"));
-
-	//	return (EventPtr(e));
-	//}
+}
 #pragma endregion
+#endif // INDEX_OFF
+
+//there is possibility that the anchor might be not the same object id, so just reset it
+anchorObjList = {};
 
 		return win->getFinalRes();
 	}

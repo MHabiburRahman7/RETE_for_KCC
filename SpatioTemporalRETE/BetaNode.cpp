@@ -1,5 +1,9 @@
 #include "BetaNode.h"
 
+//#define SHOW_RESULT
+#define INDEX_ON
+//#define INDEX_OFF
+
 //BetaNode::BetaNode()
 //	: Node(BaseNodeID, tempComingCondition)
 //{
@@ -270,7 +274,7 @@ int BetaNode::justTest()
 		}
 	}
 	//Ordered join method
-	else if (Utilities::ToUpper(thisCondition) == "AND" || specialOperation != "") {// if it is and or some specialOperation thing
+	else if (thisCondition == "and" || specialOperation != "") {// if it is and or some specialOperation thing
 
 		if (leftInputQueue.first.size() == 0 || rightInputQueue.first.size() == 0) {
 			//even it is empty, but the time still updated
@@ -444,10 +448,6 @@ int BetaNode::justTest()
 					if (win) {
 						//ALL SPECIAL OPERATION IS PROCESSED ON SPATIAL CLASS --> so, just push all to window
 
-						//if (specialOperation == "distance") {
-						//	win->addEvent(res);
-						//}
-						//else 
 						if (specialOperation != "") {
 							//later i will consider about double buffer
 							//win->addEvent(frontLeftEvent, frontRightEvent);
@@ -472,11 +472,6 @@ int BetaNode::justTest()
 						}
 					}
 
-					//push to result
-					/*if (specialOperation != "") {
-						EventResult.push(res);
-					}
-					else*/
 					EventResult.push(frontLeftEvent);
 
 					if (anchorIsAtLeft) {
@@ -519,7 +514,7 @@ int BetaNode::justTest()
 				}
 			}
 		}
-	}else if (Utilities::ToUpper(thisCondition) == "OR") {
+	}else if (thisCondition == "or") {
 		//OR Statement
 	}
 	
@@ -538,15 +533,34 @@ int BetaNode::justTest()
 	}
 
 	//at the end, re evaluate the spatial operation again -- final re evaluation
-
+	bool shouldKeep = false;
 	//PUSH TO PROCEEDING NODE .-.
 	if (listOfNextPair.size() > 0) {
 		for (Node* n : listOfNextPair) {
+#ifdef INDEX_ON
+			if (dynamic_cast<BetaNode*>(n)) {
+				if(dynamic_cast<BetaNode*>(n)->specialOperation == "distance")
+					shouldKeep = true;
+				else
+					n->pushResult(EventResult, this);
+			}
+				
+			//size_t detect_distance = n->justCondition.find("distance");
+			//if the next node is distance, so stop please. else, pass the result
+			else {
+				n->pushResult(EventResult, this);
+			}
+		
+#endif // INDEX_ON
+
+#ifdef INDEX_OFF
 			n->pushResult(EventResult, this);
+#endif // INDEX_OFF
 		}
 	}
 	//If it doesn't have, maybe this is the end?
 	else {
+#ifdef SHOW_RESULT
 		cout << "Result from " << thisProduct << " as follows: " << endl;
 		queue<EventPtr> local_ptr = EventResult;
 		while (local_ptr.size() > 0) {
@@ -554,11 +568,21 @@ int BetaNode::justTest()
 			local_ptr.pop();
 		}
 		cout << endl;
+#endif // (SHOW_RESULT)
 	}
 
 	if (EventResult.size() > 0) {
-		//if(listOfNextPair.size() != 0)
+#ifdef INDEX_ON
+		//keep it for the better future :3
+		//nothing~
+		if (!shouldKeep)
 			ClearResult();
+#endif // INDEX_ON
+
+#ifdef INDEX_OFF
+		//dispose the result
+		ClearResult();
+#endif // INDEX_OFF
 		return 1;
 	}
 	else {
@@ -579,7 +603,19 @@ void BetaNode::forcePushInQueue(EventPtr* result, bool toLeft)
 
 queue<EventPtr> BetaNode::getEvRes()
 {
+	
+#ifdef INDEX_ON
+	queue<EventPtr> temp_evResult = EventResult;
+	ClearResult();
+	return temp_evResult;
+#endif // INDEX_ON
+
+#ifdef INDEX_OFF
 	return EventResult;
+#endif // INDEX_OFF
+
+
+
 }
 
 void BetaNode::refreshEvent(queue<EventPtr>& inputEvent) {
