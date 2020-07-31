@@ -1,7 +1,7 @@
 #include "SpatialOp.h"
 
-#define INDEX_ON
-//#define INDEX_OFF
+//#define INDEX_ON
+#define INDEX_OFF
 
 SpatialOp::SpatialOp(string name)
 {

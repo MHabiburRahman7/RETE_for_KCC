@@ -6,11 +6,11 @@
 //#define INDEXED_MODE
 //#define NON_INDEXED_MODE
 //#define oneVessel_threeVessel
-//#define twoVessel_twoVessel
+#define twoVessel_twoVessel
+//#define threeVessel_oneVessel
 //#define oneVessel_twovessel_oneAircraft
 //#define oneVessel_onevessel_twoAircraft
-#define twoVessel_oneVessel_oneAircraft
-//#define threeVessel_oneVessel
+//#define twoVessel_oneVessel_oneAircraft
 
 #include "ReteNet.h"
 
@@ -604,7 +604,7 @@ int main() {
 
 			system("pause");
 			break;
-		} case 7:{ // multiple distance node
+		} case 7:{ // multiple distance node but all exist function
 			system("cls");
 			cout << "Rules for checking multiple vessel distances" << endl;
 
@@ -804,6 +804,53 @@ int main() {
 
 			system("pause");
 			break;
+		} case 9: {
+			system("cls");
+			ReteNet::buildNetNode();
+
+			cout << endl << "calculate average time spent" << endl << endl;
+			cout << "Number of nodes: " << ReteNet::GetNumberOfNodes() << endl;
+			cout << "Number of data: " << tempWM.size() << endl;
+
+			long long startTime;
+			int time_itt = 0;
+			long long avg_time = 0;
+
+			while (tempWM.size() > 0) {
+
+				//this is same-time mode --------------------------------------------------
+				int currTime = tempWM.front()->getInt("time");
+
+				queue<EventPtr> oneTimeEvent = {};
+				while (tempWM.front()->getInt("time") == currTime) {
+					oneTimeEvent.push(tempWM.front());
+					tempWM.pop();
+
+					if (tempWM.size() <= 0)
+						break;
+				}
+
+				ReteNet::cloneToWm(oneTimeEvent);
+				//-------------------------------------------------------------------------
+
+				time_itt++;
+				startTime = Utilities::getTime();
+
+				//do pre-processing
+				ReteNet::ExecuteRete(100);
+
+				//now the spatio temporal thing
+				ReteNet::SpatioTemporalExecution(100, oneTimeEvent.front()->getInt("time"));
+
+				long long timeSpent = Utilities::getTime() - startTime;
+
+				avg_time += timeSpent;
+				//avg_time = avg_time + ((timeSpent - avg_time) / time_itt);
+				//cout << "average time spent: " << avg_time << endl << endl;
+			}
+
+			cout << "average time spent: " <<avg_time/(long long)time_itt << endl << endl;
+			system("pause");
 		}
 		}
 

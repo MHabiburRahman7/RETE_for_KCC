@@ -1,7 +1,7 @@
 #include "ReteNet.h"
 
-#define INDEX_ON
-//#define INDEX_OFF
+//#define INDEX_ON
+#define INDEX_OFF
 
 WorkingMemory ReteNet::m_WMSet;
 

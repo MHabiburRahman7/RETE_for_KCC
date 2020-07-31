@@ -1,8 +1,8 @@
 #include "BetaNode.h"
 
 //#define SHOW_RESULT
-#define INDEX_ON
-//#define INDEX_OFF
+//#define INDEX_ON
+#define INDEX_OFF
 
 //BetaNode::BetaNode()
 //	: Node(BaseNodeID, tempComingCondition)
