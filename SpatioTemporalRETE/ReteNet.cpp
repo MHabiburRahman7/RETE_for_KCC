@@ -1,7 +1,7 @@
 #include "ReteNet.h"
 
-//#define INDEX_ON
-#define INDEX_OFF
+#define INDEX_ON
+//#define INDEX_OFF
 
 WorkingMemory ReteNet::m_WMSet;
 
@@ -460,18 +460,21 @@ void ReteNet::ExecuteRete(int TimeSlice)
 				continue;
 			}
 		}
+		//---------------------------------------------------------------------------------------------------
 
 		//Maybe this is the indexing?
-//#ifdef INDEX_ON
+#ifdef INDEX_ON
 		int testStatus = pushedNode[0]->testNode(TimeSlice);
 
 		if (testStatus == 0) {
 			pushedNode.erase(pushedNode.begin());
 			continue;
 		}
-//#endif // INDEX_ON
+#endif // INDEX_ON
 
-		//pushedNode[0]->testNode(TimeSlice);
+#ifdef INDEX_OFF
+		pushedNode[0]->testNode(TimeSlice);
+#endif // INDEX_OFF
 		
 		//Activate successor node	
 		for (int i = 0; i < pushedNode[0]->getAllPairs().size(); i++) {
@@ -499,7 +502,6 @@ void ReteNet::ExecuteRete(int TimeSlice)
 				break;
 			}
 		}
-		//}
 
 		pushedNode.erase(pushedNode.begin());
 
@@ -609,42 +611,6 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 	//number of vec_anchor_id and nodewithspatialindex are same
 	//the difference is just one only handle string, one handle the node also
 
-	/*
-#pragma region OldAnchorEventAddressing
-	for (int j = 0; j < vec_anchor_id.size(); j++) {
-		if (anchor_stab_map.find(vec_anchor_id[j].first.first) != anchor_stab_map.end()) // check based on the dictionaries
-		{
-			//get current event's position
-			queue<EventPtr> anchorEventQueue = static_cast<BetaNode*>(distanceNode[j])->getLeftInput();
-
-			for (; anchorEventQueue.size() > 0;) {
-
-				float xpos[3], ypos[3];
-
-				//just initiated
-				//if (hash_needUpdate[j] == true && hash_latestUpdate[j].first == 0) {
-				xpos[0] = anchorEventQueue.front()->getFloat("lat") - (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
-				xpos[1] = anchorEventQueue.front()->getFloat("lat") + (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
-
-				ypos[0] = anchorEventQueue.front()->getFloat("lon") - (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
-				ypos[1] = anchorEventQueue.front()->getFloat("lon") + (static_cast<BetaNode*>(distanceNode[j])->getSpatialLimFloat() / 2);
-
-				//3rd dimension is the enum
-				vector<int> corresponding_dimension = findCorrespondingAnchor(static_cast<BetaNode*>(distanceNode[j])->getRightConnName(), observed_obj_dict);
-				for (int k = 0; k < corresponding_dimension.size(); k++) {
-					xpos[2] = corresponding_dimension[k];
-					ypos[2] = corresponding_dimension[k];
-
-					tree.Insert(xpos, ypos, distanceNode[j]->getID());
-				}
-
-				anchorEventQueue.pop();
-			}
-		}
-	}
-#pragma endregion
-	*/
-
 #pragma region newAnchorEventAddressing
 	string prev_entity = "";
 
@@ -694,81 +660,6 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 	}
 #pragma endregion
 	//the tree is set now
-
-	/*
-#pragma region OldTreeTesting
-	//now test with the enemys
-	//vector<Node*> pushedNode = {}; //this is for bfs style, now we use priority queue
-	vector<vector<EventPtr>> organizedTestEvents = {};
-	vector<int> nhits_vec;
-
-	//initiate the organizedTestEvents
-	for (int j = 0; j < observed_obj_dict.size(); j++) {
-		organizedTestEvents.push_back({});
-	}
-
-
-	for (int j = 0; j < vec_anchor_id.size(); j++) {
-
-		//find is it belong to which index?
-		std::vector<string>::iterator it;
-		it = find(observed_obj_dict.begin(), observed_obj_dict.end(), vec_anchor_id[j].first.second);
-		int dist = distance(observed_obj_dict.begin(), it);
-
-		//assign to each observed index
-		queue<EventPtr> testEventQueue = static_cast<BetaNode*>(distanceNode[j])->getRightInput();
-		for (; testEventQueue.size() > 0; testEventQueue.pop()) {
-
-			organizedTestEvents[dist].push_back(testEventQueue.front());
-		}
-
-		//distinct enemy event
-		//std::sort(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end());
-		//organizedTestEvents[dist].erase(unique(organizedTestEvents[dist].begin(), organizedTestEvents[dist].end()), organizedTestEvents[dist].end());
-
-		//empty the node
-		// it have to be the right one ._.
-		queue<EventPtr> ept = {};
-		static_cast<BetaNode*>(distanceNode[j])->ClearInputQueue(false);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//after it is dinctinct, so we can process the stabbing process
-	//organizedevents is organized as follow --> [dictionary id][vector of event pointer]
-	for (int i = 0; i < organizedTestEvents.size(); i++) {
-		for (int j = 0; j < organizedTestEvents[i].size(); j++) {
-
-			float xpos[3], ypos[3];
-			xpos[0] = xpos[1] = organizedTestEvents[i][j]->getFloat("lat");
-			ypos[0] = ypos[1] = organizedTestEvents[i][j]->getFloat("lon");
-
-			xpos[2] = ypos[2] = i; // i is dictionary id
-
-			nhits_vec = tree.Search_vec(xpos, ypos, NULL, NULL);
-
-			//distinct the correlated beta nodes that hit
-			//sort(nhits_vec.begin(), nhits_vec.end());
-			//nhits_vec.erase(unique(nhits_vec.begin(), nhits_vec.end()), nhits_vec.end());
-
-			//push this into rete net
-			//this must be on the right
-			for (auto n : nhits_vec) {
-				Node* tempNode = NodeList[n];
-				if (dynamic_cast<BetaNode*>(tempNode)) {
-					dynamic_cast<BetaNode*>(tempNode)->forcePushInQueue(&organizedTestEvents[i][j], false);
-
-					////the bfs purpose
-					//pushedNode.push_back(tempNode);
-
-					////sort and distinct
-					//std::sort(pushedNode.begin(), pushedNode.end());
-					//pushedNode.erase(unique(pushedNode.begin(), pushedNode.end()), pushedNode.end());
-				}
-			}
-		}
-	}
-#pragma endregion
-	*/
 	
 #pragma region newTreeTesting
 	//now test with the enemys
@@ -838,8 +729,6 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 	
 	//due to constant movement, so just format the tree --> well, this is totally wrong, but still wondering how to fix it
 	tree.RemoveAll();
-#pragma endregion	
-#endif // INDEX_ON
 
 #pragma region Execute based on priority queue
 
@@ -859,16 +748,22 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 
 #pragma endregion
 
-	/*
-#pragma region OriginalRETE_BFS
-	while (!pushedNode.empty()) {
-		//Maybe this is the indexing?
-		int testStatus = pushedNode[0]->testNode(10);
 
-		if (testStatus == 0) {
-			pushedNode.erase(pushedNode.begin());
-			continue;
-		}
+#pragma endregion	
+#endif // INDEX_ON
+
+
+
+#ifdef INDEX_OFF
+	//address all spatial indexing node
+	vector<Node*> pushedNode;
+	for (int i = 0; i < distanceNode.size(); i++) {
+		pushedNode.push_back(distanceNode[i]);
+	}
+
+	while (!pushedNode.empty())
+	{
+		pushedNode[0]->testNode(TimeSlice);
 
 		//Activate successor node	
 		for (int i = 0; i < pushedNode[0]->getAllPairs().size(); i++) {
@@ -887,10 +782,27 @@ void ReteNet::SpatioTemporalExecution(int TimeSlice, int TimeNow)
 
 		pushedNode.erase(pushedNode.begin());
 	}
-#pragma endregion
-	*/
+#endif // INDEX_OFF	
 
-	
+
+//#pragma region Execute based on priority queue
+//
+//	//bool isExecuting = false;
+//	//if (p_queue.top()->getExecutionEstimated() == TimeNow) {
+//	//	cout << "at time : " << TimeNow << endl;
+//	//	printPQNodes();
+//	//}
+//
+//	while (p_queue.top()->getExecutionEstimated() == TimeNow || p_queue.top()->getExecutionEstimated() <= TimeNow) {
+//		Node* temp = p_queue.top();
+//		p_queue.pop();
+//		temp->testNode(TimeSlice);
+//		p_queue.push(temp);
+//		//isExecuting = true;
+//	}
+//
+//#pragma endregion
+
 }
 
 int ReteNet::GetNumberOfNodes()

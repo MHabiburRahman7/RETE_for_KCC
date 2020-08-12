@@ -1,7 +1,7 @@
 #include "SpatialOp.h"
 
-//#define INDEX_ON
-#define INDEX_OFF
+#define INDEX_ON
+//#define INDEX_OFF
 
 SpatialOp::SpatialOp(string name)
 {
@@ -259,6 +259,15 @@ queue<EventPtr> SpatialOp::process(SlidingWindow* win, vector<int> anchorObj)
 #ifdef INDEX_OFF
 #pragma region ManualDistCalculation
 float res_calc;
+
+//it will execute the query after 
+		if (win->getInitTime() + win->getTriggerTime() <= win->getHigheststOriginalTime()) {
+			win->setInitTime(win->getInitTime() + win->getTriggerTime()); // update the execution time
+		}
+		else {
+			//if it is not the time, it will return null
+			return {};
+		}
 
 while (res.size() > 0) {
 	int time_now = res.front()->getTime();

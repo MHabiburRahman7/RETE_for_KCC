@@ -12,6 +12,9 @@
 //#define oneVessel_onevessel_twoAircraft
 //#define twoVessel_oneVessel_oneAircraft
 
+//#define INDEX_OFF
+#define INDEX_ON
+
 #include "ReteNet.h"
 
 //using namespace std;
@@ -486,16 +489,36 @@ int main() {
 				ReteNet::cloneToWm(oneTimeEvent);
 				//-------------------------------------------------------------------------
 
+				//small time viewer
+				long long temp_startTime = Utilities::getTime();
+
 				//do pre-processing
 				ReteNet::ExecuteRete(100);
+
+				long long filteringTime = temp_startTime - Utilities::getTime();
+				long long filterTimeStart = Utilities::getTime();
 
 				//now the spatio temporal thing
 				ReteNet::SpatioTemporalExecution(100, oneTimeEvent.front()->getInt("time"));
 				
+				long long spatiotemporalTime = filterTimeStart - Utilities::getTime();
+
+				if (currTime % 100 == 0) {
+					cout << "filtering time : " << filteringTime << " spatiotemporal time : " << spatiotemporalTime << endl;
+				}
+
 			}
+
 			long long timeSpent = startTime - Utilities::getTime();
-			cout << "time spent: " << timeSpent << endl <<endl;
+#ifdef INDEX_OFF
+			cout << "No-indexing time spent: " << timeSpent << endl << endl;
+#endif // INDEX_OFF
+#ifdef INDEX_ON 
+			cout << "with indexing time spent: " << timeSpent << endl << endl;
+#endif // INDEX_ON 
+
 			system("pause");
+			break;
 		}case 6: {
 			system("cls");
 			cout << "Rules for checking multiple vessel distances" << endl;
@@ -804,7 +827,7 @@ int main() {
 
 			system("pause");
 			break;
-		} case 9: {
+		} case 9: { //average time spent they said
 			system("cls");
 			ReteNet::buildNetNode();
 
@@ -851,6 +874,331 @@ int main() {
 
 			cout << "average time spent: " <<avg_time/(long long)time_itt << endl << endl;
 			system("pause");
+		} case 10: {
+			// multiple distance node all exist function but harder --> 
+			system("cls");
+			cout << "Rules for checking multiple vessel distances" << endl;
+
+			//BASIC IF ELSE
+			vector<string> made;
+			made.push_back("IF speed>3 & elevation<10 & iff=ally");
+			made.push_back("THEN allyvessel");
+			vector<vector<pair<string, string>>> colMade;
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			cout << endl << "IF speed>3 & elevation<10 & iff=ally" << endl;
+			cout << "THEN allyvessel" << endl;
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF speed>3 & elevation<10 & iff=enemy");
+			made.push_back("THEN enemyvessel");
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			cout << endl << "IF speed>3 & elevation<10 & iff=enemy" << endl;
+			cout << "THEN enemyvessel" << endl;
+
+			ReteNet::growTheNodes(colMade);
+
+			//SPATIAL IF ELSE
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<12 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN navalthreat_far, count.enemyvessel.objid");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<12 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN navalthreat_far, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN navalthreat_med, count.enemyvessel.objid");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN navalthreat_med, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<7 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN navalthreat_close, count.enemyvessel.objid");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<8 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN navalthreat_close, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			//sonar they said
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN sonar_far, count.enemyvessel.objid");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN sonar_far, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<3 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN sonar_close, count.enemyvessel.objid");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<3 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN sonar_close, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			//Now Exist
+			made = {};
+			made.push_back("IF exist(navalthreat_far)");
+			made.push_back("WINDOW range=12, trigger=12");
+			made.push_back("THEN navalresponse_far");
+
+			cout << endl << "IF exist(navalthreat_far)" << endl;
+			cout << "WINDOW range=12, trigger=12" << endl;
+			cout << "THEN navalresponse_far" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(navalthreat_med)");
+			made.push_back("WINDOW range=10, trigger=10");
+			made.push_back("THEN navalresponse_med");
+
+			cout << endl << "IF exist(navalthreat_med)" << endl;
+			cout << "WINDOW range=10, trigger=10" << endl;
+			cout << "THEN navalresponse" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(navalthreat_close)");
+			made.push_back("WINDOW range=8, trigger=8");
+			made.push_back("THEN navalresponse_close");
+
+			cout << endl << "IF exist(navalthreat_close)" << endl;
+			cout << "WINDOW range=8, trigger=18" << endl;
+			cout << "THEN navalresponse" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(sonar_far)");
+			made.push_back("WINDOW range=8, trigger=8");
+			made.push_back("THEN navalresponse_prepare_gun");
+
+			cout << endl << "IF exist(sonar_far)" << endl;
+			cout << "WINDOW range=8, trigger=8" << endl;
+			cout << "THEN navalresponse_prepare_gun" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(sonar_close)");
+			made.push_back("WINDOW range=8, trigger=8");
+			made.push_back("THEN navalresponse_openfire");
+
+			cout << endl << "IF exist(navalthreat_close)" << endl;
+			cout << "WINDOW range=8, trigger=8" << endl;
+			cout << "THEN navalresponse_open_fire" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			system("pause");
+			break;
+		}
+		case 11: {
+			// multiple distance node all exist function but harder --> but all same window config
+			system("cls");
+			cout << "Rules for checking multiple vessel distances" << endl;
+
+			//BASIC IF ELSE
+			vector<string> made;
+			made.push_back("IF speed>3 & elevation<10 & iff=ally");
+			made.push_back("THEN allyvessel");
+			vector<vector<pair<string, string>>> colMade;
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			cout << endl << "IF speed>3 & elevation<10 & iff=ally" << endl;
+			cout << "THEN allyvessel" << endl;
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF speed>3 & elevation<10 & iff=enemy");
+			made.push_back("THEN enemyvessel");
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			cout << endl << "IF speed>3 & elevation<10 & iff=enemy" << endl;
+			cout << "THEN enemyvessel" << endl;
+
+			ReteNet::growTheNodes(colMade);
+
+			//SPATIAL IF ELSE
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<12 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN navalthreat_far");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<12 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN navalthreat_far, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN navalthreat_med");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<10 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN navalthreat_med, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<7 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN navalthreat_close");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<8 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN navalthreat_close, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			//sonar they said
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN sonar_far");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<5 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN sonar_far, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF distance(allyvessel,enemyvessel)<3 & allyvessel.type=recon");
+			made.push_back("WINDOW range=5, trigger=5");
+			made.push_back("THEN sonar_close");
+
+			cout << endl << "IF distance(allyvessel,enemyvessel)<3 & allyvessel.type=recon" << endl;
+			cout << "WINDOW range=5, trigger=5" << endl;
+			cout << "THEN sonar_close, count.enemyvessel.objid" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			//Now Exist
+			made = {};
+			made.push_back("IF exist(navalthreat_far)");
+			made.push_back("WINDOW range=12, trigger=12");
+			made.push_back("THEN navalresponse_far");
+
+			cout << endl << "IF exist(navalthreat_far)" << endl;
+			cout << "WINDOW range=12, trigger=12" << endl;
+			cout << "THEN navalresponse_far" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(navalthreat_med)");
+			made.push_back("WINDOW range=12, trigger=12");
+			made.push_back("THEN navalresponse_med");
+
+			cout << endl << "IF exist(navalthreat_med)" << endl;
+			cout << "WINDOW range=10, trigger=10" << endl;
+			cout << "THEN navalresponse" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(navalthreat_close)");
+			made.push_back("WINDOW range=12, trigger=12");
+			made.push_back("THEN navalresponse_close");
+
+			cout << endl << "IF exist(navalthreat_close)" << endl;
+			cout << "WINDOW range=8, trigger=18" << endl;
+			cout << "THEN navalresponse" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(sonar_far)");
+			made.push_back("WINDOW range=12, trigger=12");
+			made.push_back("THEN navalresponse_prepare_gun");
+
+			cout << endl << "IF exist(sonar_far)" << endl;
+			cout << "WINDOW range=12, trigger=12" << endl;
+			cout << "THEN navalresponse_prepare_gun" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			made = {};
+			made.push_back("IF exist(sonar_close)");
+			made.push_back("WINDOW range=12, trigger=12");
+			made.push_back("THEN navalresponse_openfire");
+
+			cout << endl << "IF exist(navalthreat_close)" << endl;
+			cout << "WINDOW range=8, trigger=8" << endl;
+			cout << "THEN navalresponse_open_fire" << endl;
+
+			colMade = ReteNet::parseConditionOriginal(made);
+
+			ReteNet::growTheNodes(colMade);
+
+			system("pause");
+			break;
 		}
 		}
 
